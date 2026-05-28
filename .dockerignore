@@ -1,0 +1,59 @@
+# Arso .dockerignore
+
+.git
+.github
+.gitignore
+README.md
+docs/
+
+# Secrets
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.pem
+*.key
+*.crt
+
+# Local data
+data/
+tmp/
+logs/
+captures/
+exports/
+backups/
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Go
+bin/
+dist/
+*.test
+coverage.out
+
+# Node
+node_modules/
+.angular/
+coverage/
+dist/
+
+# Java
+target/
+.gradle/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*

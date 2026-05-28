@@ -1,0 +1,352 @@
+# =============================================================================
+# Arso .gitignore
+# Monorepo: Go, Python, FastAPI/Django, Angular/Node, Docker, JetBrains, local data
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OS files
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# -----------------------------------------------------------------------------
+# Editors / IDEs
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# JetBrains local-only files
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# -----------------------------------------------------------------------------
+# Environment / secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.template
+*.local
+*.secret
+*.secrets
+secrets/
+.secret/
+credentials/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.pub
+
+# Arso local config
+arso.yaml
+arso.yml
+arso.local.yaml
+arso.local.yml
+config.local.*
+configs/local/
+configs/secrets/
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pip-log.txt
+pip-delete-this-directory.txt
+
+# -----------------------------------------------------------------------------
+# Local runtime data
+# -----------------------------------------------------------------------------
+data/
+tmp/
+temp/
+.cache/
+.runtime/
+storage/
+captures/
+exports/
+backups/
+
+# Keep directory placeholders if needed
+!data/.gitkeep
+!tmp/.gitkeep
+!captures/.gitkeep
+
+# Arso generated observatory data
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.duckdb
+*.parquet
+*.fits
+*.fit
+*.fts
+*.ser
+*.avi
+*.mp4
+*.mov
+*.mkv
+*.wav
+*.iq
+*.bin
+
+# -----------------------------------------------------------------------------
+# Go
+# -----------------------------------------------------------------------------
+bin/
+dist/
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+coverage.html
+go.work
+go.work.sum
+
+# Go vendor policy:
+# Uncomment if you do NOT want to commit vendored dependencies.
+# vendor/
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+.Python
+.python-version
+.python_history
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python packaging/build
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pyre/
+.pytype/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Poetry / Pipenv / PDM
+# Keep lock files for apps; ignore only local caches.
+.pdm-python
+.pdm-build/
+pip-wheel-metadata/
+
+# -----------------------------------------------------------------------------
+# FastAPI / Uvicorn / Gunicorn
+# -----------------------------------------------------------------------------
+*.pid
+gunicorn.pid
+uvicorn.pid
+uvicorn*.log
+gunicorn*.log
+
+# -----------------------------------------------------------------------------
+# Django
+# -----------------------------------------------------------------------------
+*.pot
+*.mo
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static_collected/
+
+# -----------------------------------------------------------------------------
+# Node / Angular / Frontend
+# -----------------------------------------------------------------------------
+node_modules/
+.angular/
+.nx/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+coverage/
+.nyc_output/
+
+# Angular build output
+apps/web/dist/
+apps/web/.angular/
+apps/web/coverage/
+
+# Generic frontend build output
+public/build/
+storybook-static/
+
+# Package manager caches
+.npm/
+.yarn/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Keep package manager metadata if used intentionally
+!.yarn/releases/
+!.yarn/plugins/
+!.yarn/sdks/
+!.yarn/versions/
+
+# -----------------------------------------------------------------------------
+# Java / Spring Boot / Maven / Gradle, if API uses Spring Boot later
+# -----------------------------------------------------------------------------
+target/
+.mvn/wrapper/maven-wrapper.jar
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# -----------------------------------------------------------------------------
+# Docker / Compose local overrides
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+compose.override.yml
+*.docker.local
+.docker/
+
+# -----------------------------------------------------------------------------
+# Infrastructure / Terraform
+# -----------------------------------------------------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# -----------------------------------------------------------------------------
+# Generated API / protocol artifacts
+# -----------------------------------------------------------------------------
+generated/
+gen/
+openapi.generated.*
+swagger.generated.*
+*.pb.go
+*_pb2.py
+*_pb2_grpc.py
+
+# If generated code is committed intentionally, add exceptions near the file.
+# Example:
+# !packages/protocol/generated/
+
+# -----------------------------------------------------------------------------
+# SDR / astronomy generated artifacts
+# -----------------------------------------------------------------------------
+*.raw
+*.cfile
+*.cf32
+*.sigmf-data
+*.sigmf-meta
+*.h5
+*.hdf5
+
+# Large image/data products should not be committed by default
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.fits.gz
+
+# Allow documentation images if needed
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.svg
+!docs/**/*.gif
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+*.bak
+*.orig
+*.rej
+*.tmp
+*.temp
+*.swp
+*.swo
