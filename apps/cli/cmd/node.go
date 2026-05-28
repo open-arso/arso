@@ -13,7 +13,7 @@ import (
 // nodeCmd represents the node command
 var nodeCmd = &cobra.Command{
 	Use:   "node",
-	Short: "Manage and inspect ARSO observatory nodes"
+	Short: "Manage and inspect ARSO observatory nodes",
 	Long: `Manage and inspect ARSO observatory nodes.
 
 A node represents an observatory device or station capable of collecting data,
@@ -25,7 +25,7 @@ capabilities, and later connect multiple observatories into a distributed mesh.
 Examples:
   arso node status
   arso node list
-  arso node info`
+  arso node info`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("node called")
 	},

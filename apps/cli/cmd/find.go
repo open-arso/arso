@@ -13,7 +13,7 @@ import (
 // findCmd represents the find command
 var findCmd = &cobra.Command{
 	Use:   "find",
-	Short: "Find and track space objects"
+	Short: "Find and track space objects",
 	Long: `Find astronomical or orbital objects from the command line.
 
 The find command can be used to search for objects such as planets, stars,
@@ -24,7 +24,7 @@ predictions based on the observer node location.
 Examples:
   arso find ISS
   arso find Mars
-  arso find ISS --follow`
+  arso find ISS --follow`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("find called")
 	},

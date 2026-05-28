@@ -13,7 +13,7 @@ import (
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Manage ARSO CLI configuration"
+	Short: "Manage ARSO CLI configuration",
 	Long: `Manage local ARSO CLI configuration.
 
 The config command controls settings such as API endpoints, default node IDs,
@@ -25,7 +25,7 @@ node, backend service, or environment they should communicate with.
 Examples:
   arso config get
   arso config set api.url http://localhost:8080
-  arso config set node.default local`
+  arso config set node.default local`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("config called")
 	},

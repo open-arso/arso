@@ -13,7 +13,7 @@ import (
 // weatherCmd represents the weather command
 var weatherCmd = &cobra.Command{
 	Use:   "weather",
-	Short: "Inspect weather and observing conditions"
+	Short: "Inspect weather and observing conditions",
 	Long: `Inspect weather data and observing conditions for an ARSO node or location.
 
 The weather command provides environmental information useful for astronomy,
@@ -26,7 +26,7 @@ start, pause, or cancel an observation session.
 Examples:
   arso weather current
   arso weather forecast
-  arso weather safety`
+  arso weather safety`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("weather called")
 	},

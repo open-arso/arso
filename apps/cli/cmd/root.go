@@ -38,7 +38,7 @@ connected hardware or services.
 
 ARSO is designed to support both local development and distributed observatory
 networks, where multiple nodes can collect, process, and share astronomical and
-environmental data.`
+environmental data.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it::!go run %
 	// Run: func(cmd *cobra.Command, args []string) { },
