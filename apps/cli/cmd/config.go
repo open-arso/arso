@@ -5,10 +5,14 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/spf13/cobra"
 )
+
+var configOverwrite bool
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
@@ -26,21 +30,102 @@ Examples:
   arso config get
   arso config set api.url http://localhost:8080
   arso config set node.default local`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("config called")
+}
+
+var configInitCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Create a default ARSO config file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		path, err := appconfig.Init(configOverwrite)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Created config at %s\n", path)
+		return nil
+	},
+}
+
+var configPathCmd = &cobra.Command{
+	Use:   "path",
+	Short: "Print the ARSO config file path",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		path, err := appconfig.Path()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(cmd.OutOrStdout(), path)
+		return nil
+	},
+}
+
+var configShowCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show the current ARSO configuration",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := appconfig.Load()
+		if err != nil {
+			return err
+		}
+
+		encoded, err := json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+		return nil
+	},
+}
+
+var configGetCmd = &cobra.Command{
+	Use:   "get <key>",
+	Short: "Get a config value",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		value, err := appconfig.Get(args[0])
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "%v\n", value)
+		return nil
+	},
+}
+
+var configSetCmd = &cobra.Command{
+	Use:   "set <key> <value>",
+	Short: "Set a config value",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		key := args[0]
+		value := args[1]
+
+		path, err := appconfig.Set(key, value)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Set %s=%s\n", key, value)
+		fmt.Fprintf(cmd.OutOrStdout(), "Saved config at %s\n", path)
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(configCmd)
 
-	// Here you will define your flags and configuration settings.
+	configCmd.AddCommand(configInitCmd)
+	configCmd.AddCommand(configPathCmd)
+	configCmd.AddCommand(configShowCmd)
+	configCmd.AddCommand(configGetCmd)
+	configCmd.AddCommand(configSetCmd)
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// configCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	configInitCmd.Flags().BoolVar(
+		&configOverwrite,
+		"overwrite",
+		false,
+		"Overwrite the config file if it already exists",
+	)
 }
