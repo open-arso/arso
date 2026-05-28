@@ -1,14 +1,29 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
+Copyright © 2026 acortino <arso@acortino.me>
 
 */
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
+
+var (
+	Version = "dev"
+	Commit  = "none"
+	Date    = "unknown"
+
+	versionOutput string
+)
+
+type versionInfo struct {
+	Version string `json:"version"`
+	Commit  string `json:"commit"`
+	Date    string `json:"date"`
+}
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
@@ -17,23 +32,44 @@ var versionCmd = &cobra.Command{
 	Long: `Print the current ARSO CLI version and build information.
 
 This command is useful for checking which version of the CLI is installed,
-debugging local environments, and reporting issues with reproducible context.`
+debugging local environments, and reporting issues with reproducible context.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		info := versionInfo{
+			Version: Version,
+			Commit:  Commit,
+			Date:    Date,
+		}
 
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("version called")
+		switch versionOutput {
+		case "text":
+			fmt.Fprintf(cmd.OutOrStdout(), "ARSO %s\n", info.Version)
+			fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", info.Commit)
+			fmt.Fprintf(cmd.OutOrStdout(), "Built:  %s\n", info.Date)
+			return nil
+
+		case "json":
+			encoded, err := json.MarshalIndent(info, "", "  ")
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+			return nil
+
+		default:
+			return fmt.Errorf("unsupported output format %q, expected one of: text, json", versionOutput)
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// versionCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// versionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	versionCmd.Flags().StringVarP(
+		&versionOutput,
+		"output",
+		"o",
+		"text",
+		"Output format: text or json",
+	)
 }
