@@ -6,8 +6,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/spf13/cobra"
 )
 
@@ -45,57 +47,70 @@ Examples:
   arso find ISS --output json`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		target := args[0]
+    	target := args[0]
 
-		queryKey, queryValue, err := satellite.ResolveTarget(target)
-		if err != nil {
-			return err
-		}
+    	cfg, err := appconfig.Load()
+    	if err != nil {
+    		return err
+    	}
 
-		client := satellite.NewClient()
+    	if !cfg.Observatory.IsConfigured() {
+    		return fmt.Errorf(
+    			"observatory location is not configured. Run:\n" +
+    				"  arso config set observatory.latitude <latitude>\n" +
+    				"  arso config set observatory.longitude <longitude>\n" +
+    				"  arso config set observatory.elevation_meters <meters>",
+    		)
+    	}
 
-		elements, err := client.Fetch(cmd.Context(), queryKey, queryValue)
-		if err != nil {
-			return err
-		}
+    	observer := satellite.Observer{
+    		Name:            cfg.Node.Name,
+    		LatitudeDeg:     *cfg.Observatory.Latitude,
+    		LongitudeDeg:    *cfg.Observatory.Longitude,
+    		ElevationMeters: cfg.Observatory.ElevationMeters,
+    	}
 
-		if len(elements) == 0 {
-			return fmt.Errorf("no object found for %q", target)
-		}
+    	client := satellite.NewClient()
 
-		switch findOutput {
-		case "text":
-			printElementText(cmd, elements[0])
-			return nil
+    	positions, err := client.Locate(cmd.Context(), target, observer, time.Now().UTC())
+    	if err != nil {
+    		return err
+    	}
 
-		case "json":
-			results := toFindResults(elements)
+    	if len(positions) == 0 {
+    		return fmt.Errorf("no object found for %q", target)
+    	}
 
-			encoded, err := json.MarshalIndent(results, "", "  ")
-			if err != nil {
-				return err
-			}
+    	switch findOutput {
+    	case "text":
+    		printApparentPositionText(cmd, positions[0])
+    		return nil
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
-			return nil
+    	case "json":
+    		encoded, err := json.MarshalIndent(positions, "", "  ")
+    		if err != nil {
+    			return err
+    		}
 
-		case "ndjson":
-			for _, element := range elements {
-				result := toFindResult(element)
+    		fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+    		return nil
 
-				encoded, err := json.Marshal(result)
-				if err != nil {
-					return err
-				}
+    	case "ndjson":
+    		for _, position := range positions {
+    			encoded, err := json.Marshal(position)
+    			if err != nil {
+    				return err
+    			}
 
-				fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
-			}
+    			fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+    		}
 
-			return nil		
-		default:
-			return fmt.Errorf("unsupported output format %q, expected one of: text, json, ndjson", findOutput)
-		}
-	},
+    		return nil
+
+    	default:
+    		return fmt.Errorf("unsupported output format %q, expected one of: text, json, ndjson", findOutput)
+    	}
+    },
 }
 
 func printElementText(cmd *cobra.Command, element satellite.GPElement) {
@@ -123,6 +138,22 @@ func toFindResult(element satellite.GPElement) findResult {
 	}
 }
 
+func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPosition) {
+	fmt.Fprintf(cmd.OutOrStdout(), "Name:        %s\n", position.Name)
+	fmt.Fprintf(cmd.OutOrStdout(), "Kind:        %s\n", position.Kind)
+	fmt.Fprintf(cmd.OutOrStdout(), "NORAD ID:    %d\n", position.NoradID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Object ID:   %s\n", position.ObjectID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Observer:    %s\n", position.ObserverName)
+	fmt.Fprintf(cmd.OutOrStdout(), "Time UTC:    %s\n", position.TimeUTC)
+	fmt.Fprintf(cmd.OutOrStdout(), "Azimuth:     %.2f°\n", position.AzimuthDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Elevation:   %.2f°\n", position.ElevationDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Range:       %.2f km\n", position.RangeKm)
+	fmt.Fprintf(cmd.OutOrStdout(), "Range rate:  %.4f km/s\n", position.RangeRateKms)
+	fmt.Fprintf(cmd.OutOrStdout(), "Visible:     %t\n", position.Visible)
+	fmt.Fprintf(cmd.OutOrStdout(), "Subpoint:    %.4f°, %.4f°\n", position.SatelliteLatitudeDeg, position.SatelliteLongitudeDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:    %.2f km\n", position.SatelliteAltitudeKm)
+}
+
 func toFindResults(elements []satellite.GPElement) []findResult {
 	results := make([]findResult, 0, len(elements))
 
@@ -141,6 +172,6 @@ func init() {
 		"output",
 		"o",
 		"text",
-		"Output format: text or json or ndjson",
+		"Output format: text, json or ndjson",
 	)
 }

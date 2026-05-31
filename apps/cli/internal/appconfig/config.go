@@ -35,9 +35,13 @@ type APIConfig struct {
 }
 
 type ObservatoryConfig struct {
-	Latitude        float64 `mapstructure:"latitude" json:"latitude"`
-	Longitude       float64 `mapstructure:"longitude" json:"longitude"`
+	Latitude        *float64 `mapstructure:"latitude" json:"latitude"`
+	Longitude       *float64 `mapstructure:"longitude" json:"longitude"`
 	ElevationMeters float64 `mapstructure:"elevation_meters" json:"elevation_meters"`
+}
+
+func (o ObservatoryConfig) IsConfigured() bool {
+	return o.Latitude != nil && o.Longitude != nil
 }
 
 type OutputConfig struct {
@@ -54,8 +58,8 @@ func Default() Config {
 			URL: "http://localhost:8080",
 		},
 		Observatory: ObservatoryConfig{
-			Latitude:        0,
-			Longitude:       0,
+			Latitude:        nil,
+			Longitude:       nil,
 			ElevationMeters: 0,
 		},
 		Output: OutputConfig{
@@ -351,8 +355,6 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("api.url", defaultConfig.API.URL)
 
-	v.SetDefault("observatory.latitude", defaultConfig.Observatory.Latitude)
-	v.SetDefault("observatory.longitude", defaultConfig.Observatory.Longitude)
 	v.SetDefault("observatory.elevation_meters", defaultConfig.Observatory.ElevationMeters)
 
 	v.SetDefault("output.format", defaultConfig.Output.Format)
