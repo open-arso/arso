@@ -1,5 +1,5 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
+Copyright © 2026 acortino <arso@acortino.me>
 
 */
 package cmd
@@ -7,10 +7,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-./bin/arso config set observatory.latitude 48.8566
-./bin/arso config set observatory.longitude 2.3522
-./bin/arso config set observatory.elevation_meters 35
-./bin/arso config show
 	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/spf13/cobra"
 )
