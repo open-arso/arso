@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/spf13/cobra"
 )
 
@@ -40,14 +41,20 @@ debugging local environments, and reporting issues with reproducible context.`,
 			Date:    Date,
 		}
 
+		versionOutput = clioutput.Normalize(versionOutput)
+		
+		if err := clioutput.Validate(versionOutput, clioutput.Text, clioutput.JSON); err != nil {
+			return err
+		}
+
 		switch versionOutput {
-		case "text":
+		case clioutput.Text:
 			fmt.Fprintf(cmd.OutOrStdout(), "ARSO %s\n", info.Version)
 			fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", info.Commit)
 			fmt.Fprintf(cmd.OutOrStdout(), "Built:  %s\n", info.Date)
 			return nil
 
-		case "json":
+		case clioutput.JSON:
 			encoded, err := json.MarshalIndent(info, "", "  ")
 			if err != nil {
 				return err
@@ -57,7 +64,7 @@ debugging local environments, and reporting issues with reproducible context.`,
 			return nil
 
 		default:
-			return fmt.Errorf("unsupported output format %q, expected one of: text, json", versionOutput)
+			return fmt.Errorf("unhandled output format %q", findOutput)
 		}
 	},
 }

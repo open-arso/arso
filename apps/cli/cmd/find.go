@@ -8,23 +8,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
 	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/spf13/cobra"
 )
-
-type findResult struct {
-	Name            string  `json:"name"`
-	NoradID         int     `json:"norad_id"`
-	ObjectID        string  `json:"object_id"`
-	Epoch           string  `json:"epoch"`
-	Inclination     float64 `json:"inclination"`
-	MeanMotion      float64 `json:"mean_motion"`
-	Eccentricity    float64 `json:"eccentricity"`
-	RAOfAscNode     float64 `json:"ra_of_asc_node"`
-	ArgOfPericenter float64 `json:"arg_of_pericenter"`
-	MeanAnomaly     float64 `json:"mean_anomaly"`
-}
 
 var findOutput string
 
@@ -48,6 +36,12 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
     	target := args[0]
+
+		findOutput = clioutput.Normalize(findOutput)
+
+		if err := clioutput.Validate(findOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
+			return err
+		}
 
     	cfg, err := appconfig.Load()
     	if err != nil {
@@ -77,11 +71,11 @@ Examples:
     	}
 
     	switch findOutput {
-    	case "text":
+		case clioutput.Text:
     		printApparentPositionText(cmd, positions[0])
     		return nil
 
-    	case "json":
+    	case clioutput.JSON:
     		encoded, err := json.MarshalIndent(positions, "", "  ")
     		if err != nil {
     			return err
@@ -90,7 +84,7 @@ Examples:
     		fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
     		return nil
 
-    	case "ndjson":
+    	case clioutput.NDJSON:
     		for _, position := range positions {
     			encoded, err := json.Marshal(position)
     			if err != nil {
@@ -103,34 +97,9 @@ Examples:
     		return nil
 
     	default:
-    		return fmt.Errorf("unsupported output format %q, expected one of: text, json, ndjson", findOutput)
+			return fmt.Errorf("unhandled output format %q", findOutput)
     	}
     },
-}
-
-func printElementText(cmd *cobra.Command, element satellite.GPElement) {
-	fmt.Fprintf(cmd.OutOrStdout(), "Name:         %s\n", element.ObjectName)
-	fmt.Fprintf(cmd.OutOrStdout(), "NORAD ID:     %d\n", element.NoradCatID)
-	fmt.Fprintf(cmd.OutOrStdout(), "Object ID:    %s\n", element.ObjectID)
-	fmt.Fprintf(cmd.OutOrStdout(), "Epoch:        %s\n", element.Epoch)
-	fmt.Fprintf(cmd.OutOrStdout(), "Inclination:  %.4f°\n", element.Inclination)
-	fmt.Fprintf(cmd.OutOrStdout(), "Mean motion:  %.8f rev/day\n", element.MeanMotion)
-	fmt.Fprintf(cmd.OutOrStdout(), "Eccentricity: %.8f\n", element.Eccentricity)
-}
-
-func toFindResult(element satellite.GPElement) findResult {
-	return findResult{
-		Name:            element.ObjectName,
-		NoradID:         element.NoradCatID,
-		ObjectID:        element.ObjectID,
-		Epoch:           element.Epoch,
-		Inclination:     element.Inclination,
-		MeanMotion:      element.MeanMotion,
-		Eccentricity:    element.Eccentricity,
-		RAOfAscNode:     element.RAOfAscNode,
-		ArgOfPericenter: element.ArgOfPericenter,
-		MeanAnomaly:     element.MeanAnomaly,
-	}
 }
 
 func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPosition) {
@@ -147,16 +116,6 @@ func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPo
 	fmt.Fprintf(cmd.OutOrStdout(), "Above horizon: %t\n", position.AboveHorizon)
 	fmt.Fprintf(cmd.OutOrStdout(), "Subpoint:    %.4f°, %.4f°\n", position.SatelliteLatitudeDeg, position.SatelliteLongitudeDeg)
 	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:    %.2f km\n", position.SatelliteAltitudeKm)
-}
-
-func toFindResults(elements []satellite.GPElement) []findResult {
-	results := make([]findResult, 0, len(elements))
-
-	for _, element := range elements {
-		results = append(results, toFindResult(element))
-	}
-
-	return results
 }
 
 func init() {
