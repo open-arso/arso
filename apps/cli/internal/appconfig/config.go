@@ -44,6 +44,33 @@ func (o ObservatoryConfig) IsConfigured() bool {
 	return o.Latitude != nil && o.Longitude != nil
 }
 
+func (o ObservatoryConfig) RequireConfigured() error {
+	if o.Latitude == nil && o.Longitude == nil {
+		return fmt.Errorf(
+			"observatory location is not configured. Run:\n" +
+				"  arso config set observatory.latitude <latitude>\n" +
+				"  arso config set observatory.longitude <longitude>\n" +
+				"  arso config set observatory.elevation_meters <meters>",
+		)
+	}
+
+	if o.Latitude == nil {
+		return fmt.Errorf(
+			"observatory latitude is not configured. Run:\n" +
+				"  arso config set observatory.latitude <latitude>",
+		)
+	}
+
+	if o.Longitude == nil {
+		return fmt.Errorf(
+			"observatory longitude is not configured. Run:\n" +
+				"  arso config set observatory.longitude <longitude>",
+		)
+	}
+
+	return nil
+}
+
 type OutputConfig struct {
 	Format string `mapstructure:"format" json:"format"`
 }

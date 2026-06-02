@@ -54,14 +54,9 @@ Examples:
     		return err
     	}
 
-    	if !cfg.Observatory.IsConfigured() {
-    		return fmt.Errorf(
-    			"observatory location is not configured. Run:\n" +
-    				"  arso config set observatory.latitude <latitude>\n" +
-    				"  arso config set observatory.longitude <longitude>\n" +
-    				"  arso config set observatory.elevation_meters <meters>",
-    		)
-    	}
+		if err := cfg.Observatory.RequireConfigured(); err != nil {
+			return err
+		}
 
     	observer := satellite.Observer{
     		Name:            cfg.Node.Name,
