@@ -33,7 +33,7 @@ type ApparentPosition struct {
 	ElevationDeg float64 `json:"elevation_deg"`
 	RangeKm      float64 `json:"range_km"`
 	RangeRateKms float64 `json:"range_rate_km_s"`
-	Visible      bool    `json:"visible"`
+	AboveHorizon bool    `json:"above_horizon"`
 
 	SatelliteLatitudeDeg  float64 `json:"satellite_latitude_deg"`
 	SatelliteLongitudeDeg float64 `json:"satellite_longitude_deg"`

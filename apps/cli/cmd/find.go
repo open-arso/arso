@@ -144,7 +144,7 @@ func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPo
 	fmt.Fprintf(cmd.OutOrStdout(), "Elevation:   %.2f°\n", position.ElevationDeg)
 	fmt.Fprintf(cmd.OutOrStdout(), "Range:       %.2f km\n", position.RangeKm)
 	fmt.Fprintf(cmd.OutOrStdout(), "Range rate:  %.4f km/s\n", position.RangeRateKms)
-	fmt.Fprintf(cmd.OutOrStdout(), "Visible:     %t\n", position.Visible)
+	fmt.Fprintf(cmd.OutOrStdout(), "Above horizon: %t\n", position.AboveHorizon)
 	fmt.Fprintf(cmd.OutOrStdout(), "Subpoint:    %.4f°, %.4f°\n", position.SatelliteLatitudeDeg, position.SatelliteLongitudeDeg)
 	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:    %.2f km\n", position.SatelliteAltitudeKm)
 }

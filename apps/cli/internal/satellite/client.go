@@ -159,7 +159,7 @@ func (c *Client) Locate(
 			ElevationDeg: observation.LookAngles.Elevation,
 			RangeKm:      observation.LookAngles.Range,
 			RangeRateKms: observation.LookAngles.RangeRate,
-			Visible:      observation.LookAngles.Elevation > 0,
+			AboveHorizon: observation.LookAngles.Elevation > 0,
 
 			SatelliteLatitudeDeg:  observation.SatellitePos.Latitude,
 			SatelliteLongitudeDeg: observation.SatellitePos.Longitude,
