@@ -15,6 +15,7 @@ import (
 )
 
 var findOutput string
+var findAt string
 
 // findCmd represents the find command
 var findCmd = &cobra.Command{
@@ -61,7 +62,12 @@ Examples:
 
     	client := satellite.NewClient()
 
-    	positions, err := client.Locate(cmd.Context(), target, observer, time.Now().UTC())
+		findAtTime, err := parseFindAt(findAt)
+		if err != nil {
+			return err
+		}
+
+    	positions, err := client.Locate(cmd.Context(), target, observer, findAtTime)
     	if err != nil {
     		return err
     	}
@@ -118,6 +124,22 @@ func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPo
 	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:    %.2f km\n", position.SatelliteAltitudeKm)
 }
 
+func parseFindAt(value string) (time.Time, error) {
+	if value == "" {
+		return time.Now().UTC(), nil
+	}
+
+	t, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf(
+			"invalid --at value %q: expected RFC3339 format like 2026-06-03T22:00:00Z",
+			value,
+		)
+	}
+
+	return t.UTC(), nil
+}
+
 func init() {
 	rootCmd.AddCommand(findCmd)
 
@@ -128,4 +150,13 @@ func init() {
 		"text",
 		"Output format: text, json or ndjson",
 	)
+
+	findCmd.Flags().StringVarP(
+		&findAt,
+		"at",
+		"a",
+		"",
+		"Observation time in RFC3339 format, for example 2026-06-03T22:00:00Z. Defaults to now.",
+	)
+
 }

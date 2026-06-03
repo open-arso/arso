@@ -158,7 +158,7 @@ func (c *Client) Locate(
 			AzimuthDeg:   observation.LookAngles.Azimuth,
 			ElevationDeg: observation.LookAngles.Elevation,
 			RangeKm:      observation.LookAngles.Range,
-			RangeRateKms: observation.LookAngles.RangeRate,
+			RangeRateKms: observation.LookAngles.RangeRate / 1000.0 ,
 			AboveHorizon: observation.LookAngles.Elevation > 0,
 
 			SatelliteLatitudeDeg:  observation.SatellitePos.Latitude,
