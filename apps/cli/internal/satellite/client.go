@@ -72,6 +72,20 @@ func (c *Client) fetchRaw(ctx context.Context, queryKey string, queryValue strin
 	return body, nil
 }
 
+func (c *Client) Elements(ctx context.Context, target string) ([]GPElement, error) {
+	queryKey, queryValue, err := ResolveTarget(target)
+	if err != nil {
+		return nil, err
+	}
+
+	elements, err := c.Fetch(ctx, queryKey, queryValue)
+	if err != nil {
+		return nil, err
+	}
+
+	return elements, nil
+}
+
 func (c *Client) Fetch(ctx context.Context, queryKey string, queryValue string) ([]GPElement, error) {
 	body, err := c.fetchRaw(ctx, queryKey, queryValue)
 	if err != nil {

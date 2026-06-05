@@ -1,0 +1,190 @@
+package cmd
+
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+	"strings"
+
+	"github.com/openarso/arso/apps/cli/internal/clioutput"
+	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"github.com/spf13/cobra"
+)
+
+type elementOutput struct {
+	Name                string  `json:"name"`
+	Kind                string  `json:"kind"`
+	Source              string  `json:"source"`
+	NoradID             int     `json:"norad_id"`
+	ObjectID            string  `json:"object_id"`
+	EpochUTC            string  `json:"epoch_utc"`
+	InclinationDeg      float64 `json:"inclination_deg"`
+	RAANDeg             float64 `json:"raan_deg"`
+	Eccentricity        float64 `json:"eccentricity"`
+	ArgOfPericenterDeg  float64 `json:"arg_of_pericenter_deg"`
+	MeanAnomalyDeg      float64 `json:"mean_anomaly_deg"`
+	MeanMotionRevPerDay float64 `json:"mean_motion_rev_per_day"`
+	BStar               float64 `json:"bstar,omitempty"`
+	MeanMotionDot       float64 `json:"mean_motion_dot,omitempty"`
+	MeanMotionDDot      float64 `json:"mean_motion_ddot,omitempty"`
+	ElementSetNo        int     `json:"element_set_no,omitempty"`
+	RevAtEpoch          int     `json:"rev_at_epoch,omitempty"`
+}
+
+
+func printApparentPositions(cmd *cobra.Command, positions []satellite.ApparentPosition, output string) error {
+	switch output {
+	case clioutput.Text:
+		for i, position := range positions {
+			if i > 0 {
+				fmt.Fprintln(cmd.OutOrStdout())
+			}
+
+			printApparentPositionText(cmd, position)
+		}
+		return nil
+
+	case clioutput.JSON:
+		return printJSON(cmd, positions)
+
+	case clioutput.NDJSON:
+		return printNDJSON(cmd, positions)
+
+	default:
+		return fmt.Errorf("unhandled output format %q", output)
+	}
+}
+
+func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPosition) {
+	fmt.Fprintf(cmd.OutOrStdout(), "Name:          %s\n", position.Name)
+	fmt.Fprintf(cmd.OutOrStdout(), "Kind:          %s\n", position.Kind)
+	fmt.Fprintf(cmd.OutOrStdout(), "NORAD ID:      %d\n", position.NoradID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Object ID:     %s\n", position.ObjectID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Observer:      %s\n", position.ObserverName)
+	fmt.Fprintf(cmd.OutOrStdout(), "Time UTC:      %s\n", position.TimeUTC)
+	fmt.Fprintf(cmd.OutOrStdout(), "Azimuth:       %.2f°\n", position.AzimuthDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Elevation:     %.2f°\n", position.ElevationDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Range:         %.2f km\n", position.RangeKm)
+	fmt.Fprintf(cmd.OutOrStdout(), "Range rate:    %.4f km/s\n", position.RangeRateKms)
+	fmt.Fprintf(cmd.OutOrStdout(), "Above horizon: %t\n", position.AboveHorizon)
+	fmt.Fprintf(cmd.OutOrStdout(), "Subpoint:      %.4f°, %.4f°\n", position.SatelliteLatitudeDeg, position.SatelliteLongitudeDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:      %.2f km\n", position.SatelliteAltitudeKm)
+}
+
+func printElements(cmd *cobra.Command, elements []satellite.GPElement, output string) error {
+	outputElements := make([]elementOutput, 0, len(elements))
+
+	for _, el := range elements {
+		outputElements = append(outputElements, toElementOutput(el))
+	}
+
+	switch output {
+	case clioutput.Text:
+		for i, el := range outputElements {
+			if i > 0 {
+				fmt.Fprintln(cmd.OutOrStdout())
+			}
+
+			printElementText(cmd, el)
+		}
+		return nil
+
+	case clioutput.JSON:
+		return printJSON(cmd, outputElements)
+
+	case clioutput.NDJSON:
+		return printNDJSON(cmd, outputElements)
+
+	default:
+		return fmt.Errorf("unhandled output format %q", output)
+	}
+}
+
+func printElementText(cmd *cobra.Command, el elementOutput) {
+	fmt.Fprintf(cmd.OutOrStdout(), "Name:              %s\n", el.Name)
+	fmt.Fprintf(cmd.OutOrStdout(), "Kind:              %s\n", el.Kind)
+	fmt.Fprintf(cmd.OutOrStdout(), "Source:            %s\n", el.Source)
+	fmt.Fprintf(cmd.OutOrStdout(), "NORAD ID:          %d\n", el.NoradID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Object ID:         %s\n", el.ObjectID)
+	fmt.Fprintf(cmd.OutOrStdout(), "Epoch UTC:         %s\n", el.EpochUTC)
+	fmt.Fprintf(cmd.OutOrStdout(), "Inclination:       %.4f°\n", el.InclinationDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "RAAN:              %.4f°\n", el.RAANDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Eccentricity:      %.7f\n", el.Eccentricity)
+	fmt.Fprintf(cmd.OutOrStdout(), "Arg. pericenter:   %.4f°\n", el.ArgOfPericenterDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Mean anomaly:      %.4f°\n", el.MeanAnomalyDeg)
+	fmt.Fprintf(cmd.OutOrStdout(), "Mean motion:       %.8f rev/day\n", el.MeanMotionRevPerDay)
+	fmt.Fprintf(cmd.OutOrStdout(), "BSTAR:             %.8g\n", el.BStar)
+}
+
+func printJSON(cmd *cobra.Command, value any) error {
+	encoded, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+	return nil
+}
+
+func printNDJSON[T any](cmd *cobra.Command, values []T) error {
+	for _, value := range values {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
+	}
+
+	return nil
+}
+
+func parseFindAt(value string) (time.Time, error) {
+	if value == "" {
+		return time.Now().UTC(), nil
+	}
+
+	t, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf(
+			"invalid --at value %q: expected RFC3339 format like 2026-06-03T22:00:00Z",
+			value,
+		)
+	}
+
+	return t.UTC(), nil
+}
+
+func toElementOutput(el satellite.GPElement) elementOutput {
+	return elementOutput{
+		Name:                el.ObjectName,
+		Kind:                "satellite",
+		Source:              "celestrak",
+		NoradID:             el.NoradCatID,
+		ObjectID:            el.ObjectID,
+		EpochUTC:            normalizeCelesTrakEpoch(el.Epoch),
+		InclinationDeg:      el.Inclination,
+		RAANDeg:             el.RAOfAscNode,
+		Eccentricity:        el.Eccentricity,
+		ArgOfPericenterDeg:  el.ArgOfPericenter,
+		MeanAnomalyDeg:      el.MeanAnomaly,
+		MeanMotionRevPerDay: el.MeanMotion,
+		BStar:               el.BStar,
+		MeanMotionDot:       el.MeanMotionDot,
+		MeanMotionDDot:      el.MeanMotionDDot,
+		ElementSetNo:        el.ElementSetNo,
+		RevAtEpoch:          el.RevAtEpoch,
+	}
+}
+
+func normalizeCelesTrakEpoch(epoch string) string {
+	if epoch == "" {
+		return ""
+	}
+
+	if strings.HasSuffix(epoch, "Z") {
+		return epoch
+	}
+
+	return epoch + "Z"
+}

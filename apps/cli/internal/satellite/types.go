@@ -11,6 +11,14 @@ type GPElement struct {
 	RAOfAscNode     float64 `json:"RA_OF_ASC_NODE"`
 	ArgOfPericenter float64 `json:"ARG_OF_PERICENTER"`
 	MeanAnomaly     float64 `json:"MEAN_ANOMALY"`
+
+	EphemerisType      int     `json:"EPHEMERIS_TYPE,omitempty"`
+	ClassificationType string `json:"CLASSIFICATION_TYPE,omitempty"`
+	ElementSetNo       int     `json:"ELEMENT_SET_NO,omitempty"`
+	RevAtEpoch         int     `json:"REV_AT_EPOCH,omitempty"`
+	BStar              float64 `json:"BSTAR,omitempty"`
+	MeanMotionDot      float64 `json:"MEAN_MOTION_DOT,omitempty"`
+	MeanMotionDDot     float64 `json:"MEAN_MOTION_DDOT,omitempty"`
 }
 
 type Observer struct {
