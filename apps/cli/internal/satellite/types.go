@@ -1,5 +1,9 @@
 package satellite
 
+import (
+    "time"
+)
+
 type GPElement struct {
 	ObjectName      string  `json:"OBJECT_NAME"`
 	ObjectID        string  `json:"OBJECT_ID"`
@@ -46,4 +50,15 @@ type ApparentPosition struct {
 	SatelliteLatitudeDeg  float64 `json:"satellite_latitude_deg"`
 	SatelliteLongitudeDeg float64 `json:"satellite_longitude_deg"`
 	SatelliteAltitudeKm   float64 `json:"satellite_altitude_km"`
+}
+
+type ResolvedTarget struct {
+	Query      string    `json:"query"`
+	Name       string    `json:"name"`
+	ObjectID   string    `json:"objectId"`
+	NoradID    int       `json:"noradId"`
+	Kind       string    `json:"kind"`
+	Source     string    `json:"source"`
+	ResolvedAt time.Time `json:"resolvedAt"`
+	ExpiresAt  time.Time `json:"expiresAt"`
 }

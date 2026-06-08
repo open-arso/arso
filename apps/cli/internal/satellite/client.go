@@ -1,13 +1,14 @@
 package satellite
 
 import (
-	"fmt"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
-	"io"
 
 	sgp4 "github.com/akhenakh/sgp4"
 )
@@ -17,14 +18,23 @@ const DefaultBaseURL = "https://celestrak.org/NORAD/elements/gp.php"
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
+	targetCache *TargetCache
 }
 
 func NewClient() *Client {
+    targetCache, err := LoadDefaultTargetCache()
+	if err != nil {
+		// Cache failure should not prevent ARSO from working.
+		// Use an in-memory cache with no path as fallback.
+		targetCache = NewTargetCache("")
+	}
+
 	return &Client{
 		baseURL: DefaultBaseURL,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
+		targetCache: targetCache,
 	}
 }
 
@@ -73,7 +83,7 @@ func (c *Client) fetchRaw(ctx context.Context, queryKey string, queryValue strin
 }
 
 func (c *Client) Elements(ctx context.Context, target string) ([]GPElement, error) {
-	queryKey, queryValue, err := ResolveTarget(target)
+	queryKey, queryValue, err := BuildCelesTrakQuery(target)
 	if err != nil {
 		return nil, err
 	}
@@ -106,12 +116,15 @@ func (c *Client) Locate(
 	observer Observer,
 	at time.Time,
 ) ([]ApparentPosition, error) {
-	queryKey, queryValue, err := ResolveTarget(target)
-	if err != nil {
-		return nil, err
-	}
+    resolved, err := c.ResolveTarget(ctx, target)
+    if err != nil {
+        return nil, err
+    }
 
-	body, err := c.fetchRaw(ctx, queryKey, queryValue)
+    body, err := c.fetchRaw(ctx, QueryCATNR, strconv.Itoa(resolved.NoradID))
+    if err != nil {
+        return nil, err
+    }
 	if err != nil {
 		return nil, err
 	}
