@@ -80,7 +80,23 @@ func (c *Client) resolveTargetFromCelesTrak(ctx context.Context, target string) 
 	}
 
 	if len(elements) > 1 {
-		return ResolvedTarget{}, fmt.Errorf("target %q is ambiguous: %d satellites found", target, len(elements))
+		candidates := make([]ResolvedTarget, 0, len(elements))
+
+		for _, element := range elements {
+			candidates = append(candidates, ResolvedTarget{
+				Query:    target,
+				Name:     element.ObjectName,
+				ObjectID: element.ObjectID,
+				NoradID:  element.NoradCatID,
+				Kind:     "satellite",
+				Source:   "celestrak",
+			})
+		}
+
+		return ResolvedTarget{}, &AmbiguousTargetError{
+			Target:     target,
+			Candidates: candidates,
+		}
 	}
 
 	element := elements[0]

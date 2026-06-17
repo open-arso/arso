@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"unicode"
 
 	sgp4 "github.com/akhenakh/sgp4"
 )
@@ -197,4 +198,18 @@ func (c *Client) Locate(
 	}
 
 	return results, nil
+}
+
+func (c *Client) CacheResolvedTarget(query string, resolved ResolvedTarget) error {
+	normalized := normalizeTarget(query)
+
+	if normalized == "" {
+		return fmt.Errorf("target cannot be empty")
+	}
+
+	if c.targetCache == nil {
+		return nil
+	}
+
+	return c.targetCache.SetTarget(normalized, resolved)
 }
