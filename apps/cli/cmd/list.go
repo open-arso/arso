@@ -17,6 +17,7 @@ var outputList 			string
 
 var listCmd = &cobra.Command{
 	Use:   "list TARGET",
+	Args: cobra.ExactArgs(1)
 	Short: "List satellite passes over your observatory",
 	Long: `List predicted satellite passes for a target above your configured observatory location.
 
