@@ -4,16 +4,15 @@ Copyright © 2026 acortino <arso@acortino.me>
 package cmd
 
 import (
-	"fmt"
 	"bufio"
-    "errors"
-    "io"
-    "strconv"
-    "strings"
+	"errors"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
 
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
-	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/spf13/cobra"
 )
 
@@ -40,15 +39,15 @@ Examples:
   arso find ISS --output json`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-    	target := args[0]
+		target := args[0]
 
-		findOutput = clioutput.Normalize(findOutput)
+		normalizedOutput := clioutput.Normalize(findOutput)
 
-		if err := clioutput.Validate(findOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
+		if err := clioutput.Validate(normalizedOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
 			return err
 		}
 
-    	client := satellite.NewClient()
+		client := newSatelliteClient()
 
 		if findElements {
 			elements, err := client.Elements(cmd.Context(), target)
@@ -60,72 +59,71 @@ Examples:
 				return fmt.Errorf("no orbital elements found for %q", target)
 			}
 
-			return printElements(cmd, elements, findOutput)
+			return printElements(cmd, elements, normalizedOutput)
 		}
 
-    	cfg, err := appconfig.Load()
-    	if err != nil {
-    		return err
-    	}
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
 
 		if err := cfg.Observatory.RequireConfigured(); err != nil {
 			return err
 		}
 
-    	observer := satellite.Observer{
-    		Name:            cfg.Node.Name,
-    		LatitudeDeg:     *cfg.Observatory.Latitude,
-    		LongitudeDeg:    *cfg.Observatory.Longitude,
-    		ElevationMeters: cfg.Observatory.ElevationMeters,
-    	}
-
+		observer := satellite.Observer{
+			Name:            cfg.Node.Name,
+			LatitudeDeg:     *cfg.Observatory.Latitude,
+			LongitudeDeg:    *cfg.Observatory.Longitude,
+			ElevationMeters: cfg.Observatory.ElevationMeters,
+		}
 
 		findAtTime, err := parseFindAt(findAt)
 		if err != nil {
 			return err
 		}
 
-        positions, err := client.Locate(cmd.Context(), target, observer, findAtTime)
-        if err != nil {
-            var ambiguousErr *satellite.AmbiguousTargetError
+		positions, err := client.Locate(cmd.Context(), target, observer, findAtTime)
+		if err != nil {
+			var ambiguousErr *satellite.AmbiguousTargetError
 
-            if errors.As(err, &ambiguousErr) {
-                selected, selectErr := selectResolvedTarget(
-                    cmd.InOrStdin(),
-                    cmd.ErrOrStderr(),
-                    ambiguousErr.Candidates,
-                )
-                if selectErr != nil {
-                    return selectErr
-                }
+			if errors.As(err, &ambiguousErr) {
+				selected, selectErr := selectResolvedTarget(
+					cmd.InOrStdin(),
+					cmd.ErrOrStderr(),
+					ambiguousErr.Candidates,
+				)
+				if selectErr != nil {
+					return selectErr
+				}
 
-                if cacheErr := client.CacheResolvedTarget(target, selected); cacheErr != nil {
-                    fmt.Fprintf(
-                        cmd.ErrOrStderr(),
-                        "Warning: could not cache selected target: %v\n",
-                        cacheErr,
-                    )
-                }
+				if cacheErr := client.CacheResolvedTarget(target, selected); cacheErr != nil {
+					fmt.Fprintf(
+						cmd.ErrOrStderr(),
+						"Warning: could not cache selected target: %v\n",
+						cacheErr,
+					)
+				}
 
-                positions, err = client.Locate(
-                    cmd.Context(),
-                    strconv.Itoa(selected.NoradID),
-                    observer,
-                    findAtTime,
-                )
-                if err != nil {
-                    return err
-                }
-            } else {
-                return err
-            }
-        }
+				positions, err = client.Locate(
+					cmd.Context(),
+					strconv.Itoa(selected.NoradID),
+					observer,
+					findAtTime,
+				)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
 
-    	if len(positions) == 0 {
-    		return fmt.Errorf("no object found for %q", target)
-    	}
+		if len(positions) == 0 {
+			return fmt.Errorf("no object found for %q", target)
+		}
 
-    	return printApparentPositions(cmd, positions, findOutput)    
+		return printApparentPositions(cmd, positions, normalizedOutput)
 	},
 }
 
@@ -160,7 +158,11 @@ func selectResolvedTarget(
 		fmt.Fprintf(out, "Select satellite [1-%d]: ", len(candidates))
 
 		if !scanner.Scan() {
-			return satellite.ResolvedTarget{}, fmt.Errorf("read selection: %w", scanner.Err())
+			if err := scanner.Err(); err != nil {
+				return satellite.ResolvedTarget{}, fmt.Errorf("read selection: %w", err)
+			}
+
+			return satellite.ResolvedTarget{}, io.EOF
 		}
 
 		rawInput := strings.TrimSpace(scanner.Text())
@@ -180,8 +182,6 @@ func selectResolvedTarget(
 	}
 }
 
-
-
 func init() {
 	rootCmd.AddCommand(findCmd)
 
@@ -200,7 +200,7 @@ func init() {
 		"",
 		"Observation time in RFC3339 format, for example 2026-06-03T22:00:00Z. Defaults to now.",
 	)
-	
+
 	findCmd.Flags().BoolVarP(
 		&findElements,
 		"elements",

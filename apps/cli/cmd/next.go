@@ -4,20 +4,19 @@ Copyright © 2026 acortino <arso@acortino.me>
 package cmd
 
 import (
-	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
 	"github.com/spf13/cobra"
 )
 
-var fromTime  		string
-var lookahead 		string
-var minElevation  	int
-var output 			string
+var fromTime string
+var lookahead string
+var minElevation int
+var output string
 
 var nextCmd = &cobra.Command{
 	Use:   "next TARGET",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Short: "Show the next satellite pass over your observatory",
 	Long: `Show the next predicted satellite pass for a target above your configured observatory location.
 
@@ -35,15 +34,15 @@ var nextCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
 
-		findOutput= clioutput.Normalize(output)
+		normalizedOutput := clioutput.Normalize(output)
 
-		if err := clioutput.Validate(findOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
+		if err := clioutput.Validate(normalizedOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
 			return err
 		}
 
-		client := satellite.NewClient()
+		client := newSatelliteClient()
 
-		cfg, err := appconfig.Load()
+		cfg, err := loadConfig()
 		if err != nil {
 			return err
 		}
@@ -52,23 +51,19 @@ var nextCmd = &cobra.Command{
 			return err
 		}
 
-    	observer := satellite.Observer{
-    		Name:            cfg.Node.Name,
-    		LatitudeDeg:     *cfg.Observatory.Latitude,
-    		LongitudeDeg:    *cfg.Observatory.Longitude,
-    		ElevationMeters: cfg.Observatory.ElevationMeters,
-    	}
+		observer := satellite.Observer{
+			Name:            cfg.Node.Name,
+			LatitudeDeg:     *cfg.Observatory.Latitude,
+			LongitudeDeg:    *cfg.Observatory.Longitude,
+			ElevationMeters: cfg.Observatory.ElevationMeters,
+		}
 
+		nextPass, err := client.NextPass(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
 		if err != nil {
 			return err
 		}
 
-        nextPass, err := client.NextPass(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
-		if err != nil {
-			return err
-		}
-
-		return printPassPredictions(cmd, nextPass, output)
+		return printPassPredictions(cmd, nextPass, normalizedOutput)
 	},
 }
 
@@ -106,6 +101,5 @@ func init() {
 		10,
 		"Minimum maximum elevation required for a pass, in degrees. Default: 10.",
 	)
-
 
 }

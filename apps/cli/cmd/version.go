@@ -1,6 +1,5 @@
 /*
 Copyright © 2026 acortino <arso@acortino.me>
-
 */
 package cmd
 
@@ -13,9 +12,12 @@ import (
 )
 
 var (
+	// Version is the CLI version injected at build time.
 	Version = "dev"
-	Commit  = "none"
-	Date    = "unknown"
+	// Commit is the source control revision injected at build time.
+	Commit = "none"
+	// Date is the build timestamp injected at build time.
+	Date = "unknown"
 
 	versionOutput string
 )
@@ -42,7 +44,7 @@ debugging local environments, and reporting issues with reproducible context.`,
 		}
 
 		versionOutput = clioutput.Normalize(versionOutput)
-		
+
 		if err := clioutput.Validate(versionOutput, clioutput.Text, clioutput.JSON); err != nil {
 			return err
 		}
@@ -64,7 +66,7 @@ debugging local environments, and reporting issues with reproducible context.`,
 			return nil
 
 		default:
-			return fmt.Errorf("unhandled output format %q", findOutput)
+			return fmt.Errorf("unhandled output format %q", versionOutput)
 		}
 	},
 }

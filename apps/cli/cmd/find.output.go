@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
@@ -31,7 +31,9 @@ type elementOutput struct {
 	RevAtEpoch          int     `json:"rev_at_epoch,omitempty"`
 }
 
-
+// printApparentPositions renders apparent-position results in the format chosen
+// by the caller. NDJSON emits one position per line so the output can be piped
+// into other CLI tools.
 func printApparentPositions(cmd *cobra.Command, positions []satellite.ApparentPosition, output string) error {
 	switch output {
 	case clioutput.Text:
@@ -71,6 +73,7 @@ func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPo
 	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:      %.2f km\n", position.SatelliteAltitudeKm)
 }
 
+// printElements renders CelesTrak element data in text, JSON, or NDJSON form.
 func printElements(cmd *cobra.Command, elements []satellite.GPElement, output string) error {
 	outputElements := make([]elementOutput, 0, len(elements))
 
@@ -177,6 +180,8 @@ func toElementOutput(el satellite.GPElement) elementOutput {
 	}
 }
 
+// normalizeCelesTrakEpoch appends a trailing UTC designator when CelesTrak
+// omits it so text and JSON output stay explicit about the timezone.
 func normalizeCelesTrakEpoch(epoch string) string {
 	if epoch == "" {
 		return ""

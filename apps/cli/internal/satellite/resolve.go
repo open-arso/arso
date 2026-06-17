@@ -7,10 +7,14 @@ import (
 )
 
 const (
+	// QueryCATNR looks up a target by NORAD catalog number.
 	QueryCATNR = "CATNR"
-	QueryNAME  = "NAME"
+	// QueryNAME looks up a target by object name.
+	QueryNAME = "NAME"
 )
 
+// BuildCelesTrakQuery converts a CLI target into the CelesTrak query key and
+// value needed for that lookup.
 func BuildCelesTrakQuery(target string) (string, string, error) {
 	cleanTarget := strings.TrimSpace(target)
 

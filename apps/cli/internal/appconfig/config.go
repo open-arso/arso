@@ -13,11 +13,15 @@ import (
 )
 
 const (
-	AppName       = "arso"
+	// AppName names the CLI application directory inside platform config paths.
+	AppName = "arso"
+	// ConfigEnvVar overrides the default config file path when it is set.
 	ConfigEnvVar = "ARSO_CONFIG"
-	ConfigFile   = "config.yaml"
+	// ConfigFile is the default filename used inside the ARSO config directory.
+	ConfigFile = "config.yaml"
 )
 
+// Config contains the persisted CLI settings used by ARSO commands.
 type Config struct {
 	Node        NodeConfig        `mapstructure:"node" json:"node"`
 	API         APIConfig         `mapstructure:"api" json:"api"`
@@ -25,25 +29,32 @@ type Config struct {
 	Output      OutputConfig      `mapstructure:"output" json:"output"`
 }
 
+// NodeConfig identifies the local node profile used by CLI requests.
 type NodeConfig struct {
 	Name string `mapstructure:"name" json:"name"`
 	ID   string `mapstructure:"id" json:"id"`
 }
 
+// APIConfig configures how the CLI reaches the ARSO backend API.
 type APIConfig struct {
 	URL string `mapstructure:"url" json:"url"`
 }
 
+// ObservatoryConfig stores the observer position used for pass and position
+// calculations.
 type ObservatoryConfig struct {
 	Latitude        *float64 `mapstructure:"latitude" json:"latitude"`
 	Longitude       *float64 `mapstructure:"longitude" json:"longitude"`
-	ElevationMeters float64 `mapstructure:"elevation_meters" json:"elevation_meters"`
+	ElevationMeters float64  `mapstructure:"elevation_meters" json:"elevation_meters"`
 }
 
+// IsConfigured reports whether both latitude and longitude are available.
 func (o ObservatoryConfig) IsConfigured() bool {
 	return o.Latitude != nil && o.Longitude != nil
 }
 
+// RequireConfigured returns a user-facing error that explains which
+// observatory coordinates are still missing.
 func (o ObservatoryConfig) RequireConfigured() error {
 	if o.Latitude == nil && o.Longitude == nil {
 		return fmt.Errorf(
@@ -71,10 +82,13 @@ func (o ObservatoryConfig) RequireConfigured() error {
 	return nil
 }
 
+// OutputConfig stores the preferred default output format for commands that
+// support machine-readable responses.
 type OutputConfig struct {
 	Format string `mapstructure:"format" json:"format"`
 }
 
+// Default returns the baseline configuration used when no config file exists.
 func Default() Config {
 	return Config{
 		Node: NodeConfig{
@@ -95,6 +109,7 @@ func Default() Config {
 	}
 }
 
+// Path resolves the config file path, honoring ARSO_CONFIG when it is set.
 func Path() (string, error) {
 	if customPath := strings.TrimSpace(os.Getenv(ConfigEnvVar)); customPath != "" {
 		return customPath, nil
@@ -108,6 +123,7 @@ func Path() (string, error) {
 	return filepath.Join(configDir, AppName, ConfigFile), nil
 }
 
+// Exists reports whether the config file currently exists on disk.
 func Exists() (bool, error) {
 	path, err := Path()
 	if err != nil {
@@ -139,6 +155,8 @@ func newViper() (*viper.Viper, string, error) {
 	return v, path, nil
 }
 
+// Init creates a config file populated with default values. When overwrite is
+// false, Init returns an error if the file already exists.
 func Init(overwrite bool) (string, error) {
 	path, err := Path()
 	if err != nil {
@@ -172,6 +190,8 @@ func Init(overwrite bool) (string, error) {
 	return path, nil
 }
 
+// Load reads the config file and merges it with default values. Missing config
+// files are treated as an empty config instead of an error.
 func Load() (Config, error) {
 	cfg := Default()
 
@@ -201,6 +221,7 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
+// Get returns the current value for a supported config key.
 func Get(key string) (any, error) {
 	v, _, err := newViper()
 	if err != nil {
@@ -222,6 +243,8 @@ func Get(key string) (any, error) {
 	return v.Get(key), nil
 }
 
+// Set validates and persists a supported config key/value pair, returning the
+// path to the saved config file.
 func Set(key string, rawValue string) (string, error) {
 	value, err := parseConfigValue(key, rawValue)
 	if err != nil {
@@ -389,13 +412,13 @@ func setDefaults(v *viper.Viper) {
 
 func validateKey(key string) error {
 	allowed := map[string]bool{
-		"node.name":                     true,
-		"node.id":                       true,
-		"api.url":                       true,
-		"observatory.latitude":          true,
-		"observatory.longitude":         true,
-		"observatory.elevation_meters":  true,
-		"output.format":                 true,
+		"node.name":                    true,
+		"node.id":                      true,
+		"api.url":                      true,
+		"observatory.latitude":         true,
+		"observatory.longitude":        true,
+		"observatory.elevation_meters": true,
+		"output.format":                true,
 	}
 
 	if !allowed[key] {

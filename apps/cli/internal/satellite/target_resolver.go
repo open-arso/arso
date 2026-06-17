@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-
-
 func normalizeTarget(target string) string {
 	return strings.ToUpper(strings.TrimSpace(target))
 }
@@ -28,6 +26,8 @@ func parseNORADID(target string) (int, bool) {
 	return noradID, true
 }
 
+// ResolveTarget resolves a user-supplied target string to a single satellite,
+// preferring direct NORAD IDs and cached lookups before calling CelesTrak.
 func (c *Client) ResolveTarget(ctx context.Context, target string) (ResolvedTarget, error) {
 	normalized := normalizeTarget(target)
 
