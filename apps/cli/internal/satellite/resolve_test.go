@@ -72,3 +72,19 @@ func TestBuildCelesTrakQuery(t *testing.T) {
 		})
 	}
 }
+
+func TestAmbiguousTargetErrorMessage(t *testing.T) {
+	err := (&AmbiguousTargetError{
+		Target: "ISS",
+		Candidates: []ResolvedTarget{
+			{Name: "ISS (ZARYA)"},
+			{Name: "ISS-DEB"},
+		},
+	}).Error()
+
+	for _, fragment := range []string{`target "ISS" is ambiguous`, "2 satellites found"} {
+		if !strings.Contains(err, fragment) {
+			t.Fatalf("error message %q missing fragment %q", err, fragment)
+		}
+	}
+}
