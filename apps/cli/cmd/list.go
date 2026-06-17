@@ -61,7 +61,7 @@ var listCmd = &cobra.Command{
     	}
 
 
-        nextPassPredictions, err := client.PassPredictions(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
+        nextPassPredictions, err := client.PassPredictions(cmd.Context(), target, observer, fromTimeList, lookaheadList, minElevationList)
 		if err != nil {
 			return err
 		}
