@@ -1,6 +1,5 @@
 /*
 Copyright © 2026 acortino <arso@acortino.me>
-
 */
 package cmd
 

@@ -1,9 +1,8 @@
 package satellite
 
-import (
-    "time"
-)
+import "time"
 
+// GPElement is a decoded CelesTrak general-perturbations element set.
 type GPElement struct {
 	ObjectName      string  `json:"OBJECT_NAME"`
 	ObjectID        string  `json:"OBJECT_ID"`
@@ -17,7 +16,7 @@ type GPElement struct {
 	MeanAnomaly     float64 `json:"MEAN_ANOMALY"`
 
 	EphemerisType      int     `json:"EPHEMERIS_TYPE,omitempty"`
-	ClassificationType string `json:"CLASSIFICATION_TYPE,omitempty"`
+	ClassificationType string  `json:"CLASSIFICATION_TYPE,omitempty"`
 	ElementSetNo       int     `json:"ELEMENT_SET_NO,omitempty"`
 	RevAtEpoch         int     `json:"REV_AT_EPOCH,omitempty"`
 	BStar              float64 `json:"BSTAR,omitempty"`
@@ -25,6 +24,8 @@ type GPElement struct {
 	MeanMotionDDot     float64 `json:"MEAN_MOTION_DDOT,omitempty"`
 }
 
+// Observer describes the observing location used for position and pass
+// calculations.
 type Observer struct {
 	Name            string
 	LatitudeDeg     float64
@@ -32,14 +33,16 @@ type Observer struct {
 	ElevationMeters float64
 }
 
+// ApparentPosition describes where a target appears in the observer's sky at a
+// single instant.
 type ApparentPosition struct {
-	Name          string `json:"name"`
-	Kind          string `json:"kind"`
-	Source        string `json:"source"`
-	NoradID       int    `json:"norad_id"`
-	ObjectID      string `json:"object_id"`
-	ObserverName  string `json:"observer_name"`
-	TimeUTC       string `json:"time_utc"`
+	Name         string `json:"name"`
+	Kind         string `json:"kind"`
+	Source       string `json:"source"`
+	NoradID      int    `json:"norad_id"`
+	ObjectID     string `json:"object_id"`
+	ObserverName string `json:"observer_name"`
+	TimeUTC      string `json:"time_utc"`
 
 	AzimuthDeg   float64 `json:"azimuth_deg"`
 	ElevationDeg float64 `json:"elevation_deg"`
@@ -52,6 +55,7 @@ type ApparentPosition struct {
 	SatelliteAltitudeKm   float64 `json:"satellite_altitude_km"`
 }
 
+// ResolvedTarget records the specific satellite chosen for a user query.
 type ResolvedTarget struct {
 	Query      string    `json:"query"`
 	Name       string    `json:"name"`
@@ -63,24 +67,26 @@ type ResolvedTarget struct {
 	ExpiresAt  time.Time `json:"expiresAt"`
 }
 
+// PassPredictionResult groups predicted passes with the target metadata used to
+// produce them.
 type PassPredictionResult struct {
-	Name          string `json:"name"`
-	Kind          string `json:"kind"`
-	Source        string `json:"source"`
-	NoradID       int    `json:"norad_id"`
-	ObjectID      string `json:"object_id"`
-	ObserverName  string `json:"observer_name"`
+	Name         string `json:"name"`
+	Kind         string `json:"kind"`
+	Source       string `json:"source"`
+	NoradID      int    `json:"norad_id"`
+	ObjectID     string `json:"object_id"`
+	ObserverName string `json:"observer_name"`
 
 	Passes []PredictedPass `json:"passes"`
 }
 
+// PredictedPass describes one visible pass over the observer location.
 type PredictedPass struct {
-	AcquisitionOfSignal   time.Time  	 `json:"acquisition_of_signal"`
-	LossOfSignal 		  time.Time  	 `json:"loss_of_signal"`
-	Duration 			  time.Duration  `json:"duration"`
-	MaxElevation 		  float64  		 `json:"max_elevation"`
-	MaxElevationTime      time.Time 	 `json:"time_of_max_elevation"`   
-	AzimuthAtAOS		  float64  		 `json:"azimuth_at_aos"`
-	AzimuthAtLOS		  float64  		 `json:"azimuth_at_los"`
+	AcquisitionOfSignal time.Time     `json:"acquisition_of_signal"`
+	LossOfSignal        time.Time     `json:"loss_of_signal"`
+	Duration            time.Duration `json:"duration"`
+	MaxElevation        float64       `json:"max_elevation"`
+	MaxElevationTime    time.Time     `json:"time_of_max_elevation"`
+	AzimuthAtAOS        float64       `json:"azimuth_at_aos"`
+	AzimuthAtLOS        float64       `json:"azimuth_at_los"`
 }
-

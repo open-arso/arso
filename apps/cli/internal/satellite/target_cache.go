@@ -8,11 +8,15 @@ import (
 	"time"
 )
 
+// TargetCache stores resolved target lookups so repeat CLI searches can avoid
+// another CelesTrak name query.
 type TargetCache struct {
 	path    string
 	Targets map[string]ResolvedTarget `json:"targets"`
 }
 
+// NewTargetCache returns an empty cache backed by path. When path is empty, the
+// cache stays in memory only.
 func NewTargetCache(path string) *TargetCache {
 	return &TargetCache{
 		path:    path,
@@ -20,6 +24,7 @@ func NewTargetCache(path string) *TargetCache {
 	}
 }
 
+// DefaultTargetCachePath returns the standard on-disk cache file location.
 func DefaultTargetCachePath() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -29,6 +34,7 @@ func DefaultTargetCachePath() (string, error) {
 	return filepath.Join(cacheDir, "arso", "targets.json"), nil
 }
 
+// LoadDefaultTargetCache loads the cache from the default cache path.
 func LoadDefaultTargetCache() (*TargetCache, error) {
 	path, err := DefaultTargetCachePath()
 	if err != nil {
@@ -38,6 +44,8 @@ func LoadDefaultTargetCache() (*TargetCache, error) {
 	return LoadTargetCache(path)
 }
 
+// LoadTargetCache loads target cache data from path. Missing files return an
+// empty cache instead of an error.
 func LoadTargetCache(path string) (*TargetCache, error) {
 	targetCache := NewTargetCache(path)
 
@@ -60,6 +68,7 @@ func LoadTargetCache(path string) (*TargetCache, error) {
 	return targetCache, nil
 }
 
+// GetTarget returns a cached target when it exists and has not expired.
 func (c *TargetCache) GetTarget(key string) (ResolvedTarget, bool) {
 	target, ok := c.Targets[key]
 	if !ok {
@@ -75,6 +84,7 @@ func (c *TargetCache) GetTarget(key string) (ResolvedTarget, bool) {
 	return target, true
 }
 
+// SetTarget stores target under key and refreshes its resolution timestamps.
 func (c *TargetCache) SetTarget(key string, target ResolvedTarget) error {
 	now := time.Now().UTC()
 
@@ -88,6 +98,7 @@ func (c *TargetCache) SetTarget(key string, target ResolvedTarget) error {
 	return c.Save()
 }
 
+// Save writes the cache to disk when it has a backing path.
 func (c *TargetCache) Save() error {
 	if c.path == "" {
 		return nil
