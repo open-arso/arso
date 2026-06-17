@@ -62,3 +62,25 @@ type ResolvedTarget struct {
 	ResolvedAt time.Time `json:"resolvedAt"`
 	ExpiresAt  time.Time `json:"expiresAt"`
 }
+
+type PassPredictionResult struct {
+	Name          string `json:"name"`
+	Kind          string `json:"kind"`
+	Source        string `json:"source"`
+	NoradID       int    `json:"norad_id"`
+	ObjectID      string `json:"object_id"`
+	ObserverName  string `json:"observer_name"`
+
+	Passes []PredictedPass `json:"passes"`
+}
+
+type PredictedPass struct {
+	AcquisitionOfSignal   time.Time  	 `json:"acquisition_of_signal"`
+	LossOfSignal 		  time.Time  	 `json:"loss_of_signal"`
+	Duration 			  time.Duration  `json:"duration"`
+	MaxElevation 		  float64  		 `json:"max_elevation"`
+	MaxElevationTime      time.Time 	 `json:"time_of_max_elevation"`   
+	AzimuthAtAOS		  float64  		 `json:"azimuth_at_aos"`
+	AzimuthAtLOS		  float64  		 `json:"azimuth_at_los"`
+}
+
