@@ -5,6 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"bufio"
+    "errors"
+    "io"
+    "strconv"
+    "strings"
 
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
@@ -80,10 +85,41 @@ Examples:
 			return err
 		}
 
-    	positions, err := client.Locate(cmd.Context(), target, observer, findAtTime)
-    	if err != nil {
-    		return err
-    	}
+        positions, err := client.Locate(cmd.Context(), target, observer, findAtTime)
+        if err != nil {
+            var ambiguousErr *satellite.AmbiguousTargetError
+
+            if errors.As(err, &ambiguousErr) {
+                selected, selectErr := selectResolvedTarget(
+                    cmd.InOrStdin(),
+                    cmd.ErrOrStderr(),
+                    ambiguousErr.Candidates,
+                )
+                if selectErr != nil {
+                    return selectErr
+                }
+
+                if cacheErr := client.CacheResolvedTarget(target, selected); cacheErr != nil {
+                    fmt.Fprintf(
+                        cmd.ErrOrStderr(),
+                        "Warning: could not cache selected target: %v\n",
+                        cacheErr,
+                    )
+                }
+
+                positions, err = client.Locate(
+                    cmd.Context(),
+                    strconv.Itoa(selected.NoradID),
+                    observer,
+                    findAtTime,
+                )
+                if err != nil {
+                    return err
+                }
+            } else {
+                return err
+            }
+        }
 
     	if len(positions) == 0 {
     		return fmt.Errorf("no object found for %q", target)
@@ -92,6 +128,58 @@ Examples:
     	return printApparentPositions(cmd, positions, findOutput)    
 	},
 }
+
+func selectResolvedTarget(
+	in io.Reader,
+	out io.Writer,
+	candidates []satellite.ResolvedTarget,
+) (satellite.ResolvedTarget, error) {
+	if len(candidates) == 0 {
+		return satellite.ResolvedTarget{}, fmt.Errorf("no candidates to select")
+	}
+
+	fmt.Fprintln(out, "Several satellites match your target:")
+	fmt.Fprintln(out)
+
+	for i, candidate := range candidates {
+		fmt.Fprintf(
+			out,
+			"%d) %s — NORAD %d — Object ID %s\n",
+			i+1,
+			candidate.Name,
+			candidate.NoradID,
+			candidate.ObjectID,
+		)
+	}
+
+	fmt.Fprintln(out)
+
+	scanner := bufio.NewScanner(in)
+
+	for {
+		fmt.Fprintf(out, "Select satellite [1-%d]: ", len(candidates))
+
+		if !scanner.Scan() {
+			return satellite.ResolvedTarget{}, fmt.Errorf("read selection: %w", scanner.Err())
+		}
+
+		rawInput := strings.TrimSpace(scanner.Text())
+
+		selectedIndex, err := strconv.Atoi(rawInput)
+		if err != nil {
+			fmt.Fprintln(out, "Please enter a valid number.")
+			continue
+		}
+
+		if selectedIndex < 1 || selectedIndex > len(candidates) {
+			fmt.Fprintf(out, "Please enter a number between 1 and %d.\n", len(candidates))
+			continue
+		}
+
+		return candidates[selectedIndex-1], nil
+	}
+}
+
 
 
 func init() {
