@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ Examples:
 			return err
 		}
 
-		client := newSatelliteClient()
+		client := satellite.NewClient()
 
 		if findElements {
 			elements, err := client.Elements(cmd.Context(), target)
@@ -62,7 +63,7 @@ Examples:
 			return printElements(cmd, elements, normalizedOutput)
 		}
 
-		cfg, err := loadConfig()
+		cfg, err := appconfig.Load()
 		if err != nil {
 			return err
 		}

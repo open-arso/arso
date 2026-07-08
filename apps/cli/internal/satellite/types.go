@@ -1,6 +1,8 @@
 package satellite
 
-import "time"
+import (
+	"time"
+)
 
 // GPElement is a decoded CelesTrak general-perturbations element set.
 type GPElement struct {

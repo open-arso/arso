@@ -31,9 +31,6 @@ type elementOutput struct {
 	RevAtEpoch          int     `json:"rev_at_epoch,omitempty"`
 }
 
-// printApparentPositions renders apparent-position results in the format chosen
-// by the caller. NDJSON emits one position per line so the output can be piped
-// into other CLI tools.
 func printApparentPositions(cmd *cobra.Command, positions []satellite.ApparentPosition, output string) error {
 	switch output {
 	case clioutput.Text:
