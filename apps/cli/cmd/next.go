@@ -4,6 +4,10 @@ Copyright © 2026 acortino <arso@acortino.me>
 package cmd
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/openarso/arso/apps/cli/internal/appconfig"
 	"github.com/openarso/arso/apps/cli/internal/clioutput"
 	"github.com/openarso/arso/apps/cli/internal/satellite"
 	"github.com/spf13/cobra"
@@ -12,7 +16,7 @@ import (
 var fromTime string
 var lookahead string
 var minElevation int
-var output string
+var outputNext string
 
 var nextCmd = &cobra.Command{
 	Use:   "next TARGET",
@@ -34,7 +38,7 @@ var nextCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
 
-		normalizedOutput := clioutput.Normalize(output)
+		findOutput = clioutput.Normalize(outputNext)
 
 		if err := clioutput.Validate(normalizedOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
 			return err
@@ -60,10 +64,37 @@ var nextCmd = &cobra.Command{
 
 		nextPass, err := client.NextPass(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
 		if err != nil {
-			return err
+			var ambiguousErr *satellite.AmbiguousTargetError
+
+			if errors.As(err, &ambiguousErr) {
+				selected, selectErr := selectResolvedTarget(
+					cmd.InOrStdin(),
+					cmd.ErrOrStderr(),
+					ambiguousErr.Candidates,
+				)
+				if selectErr != nil {
+					return selectErr
+				}
+
+				if cacheErr := client.CacheResolvedTarget(target, selected); cacheErr != nil {
+					fmt.Fprintf(
+						cmd.ErrOrStderr(),
+						"Warning: could not cache selected target: %v\n",
+						cacheErr,
+					)
+				}
+
+				nextPass, err = client.NextPass(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
+
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 
-		return printPassPredictions(cmd, nextPass, normalizedOutput)
+		return printPassPredictions(cmd, nextPass, outputNext)
 	},
 }
 
@@ -71,7 +102,7 @@ func init() {
 	passCmd.AddCommand(nextCmd)
 
 	nextCmd.Flags().StringVarP(
-		&output,
+		&outputNext,
 		"output",
 		"o",
 		"text",
