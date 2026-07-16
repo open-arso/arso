@@ -30,7 +30,7 @@ func PrintNodeStatus(cmd *cobra.Command, result node.Status, output string) erro
 		return PrintJSON(cmd, result)
 
 	case NDJSON:
-		return PrintJSON(cmd, result)
+		return PrintNDJSON(cmd, []node.Status{result})
 
 	default:
 		return fmt.Errorf("unhandled output format %q", output)

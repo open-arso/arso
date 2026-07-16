@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/openarso/arso/apps/internal/satellite"
@@ -156,9 +155,17 @@ func normalizeCelesTrakEpoch(epoch string) string {
 		return ""
 	}
 
-	if strings.HasSuffix(epoch, "Z") {
-		return epoch
+	// Try to parse as RFC3339
+	t, err := time.Parse(time.RFC3339, epoch)
+	if err != nil {
+		// Try parsing without Z
+		t, err = time.Parse("2006-01-02T15:04:05", epoch)
+		if err != nil {
+			// Return as-is if we can't parse
+			return epoch
+		}
 	}
 
-	return epoch + "Z"
+	// Always return in UTC with Z suffix
+	return t.UTC().Format("2006-01-02T15:04:05Z")
 }
