@@ -1,6 +1,8 @@
 package satellite
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // AmbiguousTargetError reports that a name lookup matched multiple satellites
 // and needs user input to choose one.

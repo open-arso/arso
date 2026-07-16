@@ -1,13 +1,11 @@
-package cmd
+package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/openarso/arso/apps/cli/internal/clioutput"
-	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"github.com/openarso/arso/apps/internal/satellite"
 	"github.com/spf13/cobra"
 )
 
@@ -31,30 +29,30 @@ type elementOutput struct {
 	RevAtEpoch          int     `json:"rev_at_epoch,omitempty"`
 }
 
-func printApparentPositions(cmd *cobra.Command, positions []satellite.ApparentPosition, output string) error {
-	switch output {
-	case clioutput.Text:
+func PrintApparentPositions(cmd *cobra.Command, positions []satellite.ApparentPosition, outputFormat string) error {
+	switch outputFormat {
+	case Text:
 		for i, position := range positions {
 			if i > 0 {
 				fmt.Fprintln(cmd.OutOrStdout())
 			}
 
-			printApparentPositionText(cmd, position)
+			PrintApparentPositionText(cmd, position)
 		}
 		return nil
 
-	case clioutput.JSON:
-		return printJSON(cmd, positions)
+	case JSON:
+		return PrintJSON(cmd, positions)
 
-	case clioutput.NDJSON:
-		return printNDJSON(cmd, positions)
+	case NDJSON:
+		return PrintNDJSON(cmd, positions)
 
 	default:
-		return fmt.Errorf("unhandled output format %q", output)
+		return fmt.Errorf("unhandled output format %q", outputFormat)
 	}
 }
 
-func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPosition) {
+func PrintApparentPositionText(cmd *cobra.Command, position satellite.ApparentPosition) {
 	fmt.Fprintf(cmd.OutOrStdout(), "Name:          %s\n", position.Name)
 	fmt.Fprintf(cmd.OutOrStdout(), "Kind:          %s\n", position.Kind)
 	fmt.Fprintf(cmd.OutOrStdout(), "NORAD ID:      %d\n", position.NoradID)
@@ -70,37 +68,36 @@ func printApparentPositionText(cmd *cobra.Command, position satellite.ApparentPo
 	fmt.Fprintf(cmd.OutOrStdout(), "Altitude:      %.2f km\n", position.SatelliteAltitudeKm)
 }
 
-// printElements renders CelesTrak element data in text, JSON, or NDJSON form.
-func printElements(cmd *cobra.Command, elements []satellite.GPElement, output string) error {
+func PrintElements(cmd *cobra.Command, elements []satellite.GPElement, outputFormat string) error {
 	outputElements := make([]elementOutput, 0, len(elements))
 
 	for _, el := range elements {
 		outputElements = append(outputElements, toElementOutput(el))
 	}
 
-	switch output {
-	case clioutput.Text:
+	switch outputFormat {
+	case Text:
 		for i, el := range outputElements {
 			if i > 0 {
 				fmt.Fprintln(cmd.OutOrStdout())
 			}
 
-			printElementText(cmd, el)
+			PrintElementText(cmd, el)
 		}
 		return nil
 
-	case clioutput.JSON:
-		return printJSON(cmd, outputElements)
+	case JSON:
+		return PrintJSON(cmd, outputElements)
 
-	case clioutput.NDJSON:
-		return printNDJSON(cmd, outputElements)
+	case NDJSON:
+		return PrintNDJSON(cmd, outputElements)
 
 	default:
-		return fmt.Errorf("unhandled output format %q", output)
+		return fmt.Errorf("unhandled output format %q", outputFormat)
 	}
 }
 
-func printElementText(cmd *cobra.Command, el elementOutput) {
+func PrintElementText(cmd *cobra.Command, el elementOutput) {
 	fmt.Fprintf(cmd.OutOrStdout(), "Name:              %s\n", el.Name)
 	fmt.Fprintf(cmd.OutOrStdout(), "Kind:              %s\n", el.Kind)
 	fmt.Fprintf(cmd.OutOrStdout(), "Source:            %s\n", el.Source)
@@ -116,30 +113,7 @@ func printElementText(cmd *cobra.Command, el elementOutput) {
 	fmt.Fprintf(cmd.OutOrStdout(), "BSTAR:             %.8g\n", el.BStar)
 }
 
-func printJSON(cmd *cobra.Command, value any) error {
-	encoded, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
-	return nil
-}
-
-func printNDJSON[T any](cmd *cobra.Command, values []T) error {
-	for _, value := range values {
-		encoded, err := json.Marshal(value)
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(cmd.OutOrStdout(), string(encoded))
-	}
-
-	return nil
-}
-
-func parseFindAt(value string) (time.Time, error) {
+func ParseFindAt(value string) (time.Time, error) {
 	if value == "" {
 		return time.Now().UTC(), nil
 	}
@@ -177,8 +151,6 @@ func toElementOutput(el satellite.GPElement) elementOutput {
 	}
 }
 
-// normalizeCelesTrakEpoch appends a trailing UTC designator when CelesTrak
-// omits it so text and JSON output stay explicit about the timezone.
 func normalizeCelesTrakEpoch(epoch string) string {
 	if epoch == "" {
 		return ""

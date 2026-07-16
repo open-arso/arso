@@ -1,4 +1,4 @@
-package clioutput
+package output
 
 import (
 	"fmt"

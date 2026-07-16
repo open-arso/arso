@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/openarso/arso/apps/cli/internal/clioutput"
+	"github.com/openarso/arso/apps/cli/cmd/output"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,6 @@ type versionInfo struct {
 	Date    string `json:"date"`
 }
 
-// versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the ARSO CLI version",
@@ -43,20 +42,20 @@ debugging local environments, and reporting issues with reproducible context.`,
 			Date:    Date,
 		}
 
-		versionOutput = clioutput.Normalize(versionOutput)
+		versionOutput = output.Normalize(versionOutput)
 
-		if err := clioutput.Validate(versionOutput, clioutput.Text, clioutput.JSON); err != nil {
+		if err := output.Validate(versionOutput, output.Text, output.JSON); err != nil {
 			return err
 		}
 
 		switch versionOutput {
-		case clioutput.Text:
+		case output.Text:
 			fmt.Fprintf(cmd.OutOrStdout(), "ARSO %s\n", info.Version)
 			fmt.Fprintf(cmd.OutOrStdout(), "Commit: %s\n", info.Commit)
 			fmt.Fprintf(cmd.OutOrStdout(), "Built:  %s\n", info.Date)
 			return nil
 
-		case clioutput.JSON:
+		case output.JSON:
 			encoded, err := json.MarshalIndent(info, "", "  ")
 			if err != nil {
 				return err

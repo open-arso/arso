@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/openarso/arso/apps/cli/internal/appconfig"
-	"github.com/openarso/arso/apps/cli/internal/clioutput"
-	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"github.com/openarso/arso/apps/cli/cmd/output"
+	"github.com/openarso/arso/apps/internal/config"
+	"github.com/openarso/arso/apps/internal/satellite"
 	"github.com/spf13/cobra"
 )
 
@@ -38,15 +38,15 @@ var nextCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
 
-		findOutput = clioutput.Normalize(outputNext)
+		findOutput = output.Normalize(outputNext)
 
-		if err := clioutput.Validate(normalizedOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
+		if err := output.Validate(findOutput, output.Text, output.JSON, output.NDJSON); err != nil {
 			return err
 		}
 
-		client := newSatelliteClient()
+		client := satellite.NewClient()
 
-		cfg, err := loadConfig()
+		cfg, err := config.Load()
 		if err != nil {
 			return err
 		}
@@ -55,11 +55,15 @@ var nextCmd = &cobra.Command{
 			return err
 		}
 
-		observer := satellite.Observer{
+		observer := config.Observer{
 			Name:            cfg.Node.Name,
 			LatitudeDeg:     *cfg.Observatory.Latitude,
 			LongitudeDeg:    *cfg.Observatory.Longitude,
 			ElevationMeters: cfg.Observatory.ElevationMeters,
+		}
+
+		if err != nil {
+			return err
 		}
 
 		nextPass, err := client.NextPass(cmd.Context(), target, observer, fromTime, lookahead, minElevation)
@@ -67,7 +71,7 @@ var nextCmd = &cobra.Command{
 			var ambiguousErr *satellite.AmbiguousTargetError
 
 			if errors.As(err, &ambiguousErr) {
-				selected, selectErr := selectResolvedTarget(
+				selected, selectErr := SelectResolvedTarget(
 					cmd.InOrStdin(),
 					cmd.ErrOrStderr(),
 					ambiguousErr.Candidates,
@@ -94,7 +98,7 @@ var nextCmd = &cobra.Command{
 			}
 		}
 
-		return printPassPredictions(cmd, nextPass, outputNext)
+		return output.PrintPassPredictions(cmd, nextPass, outputNext)
 	},
 }
 

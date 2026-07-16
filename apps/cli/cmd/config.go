@@ -6,13 +6,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/openarso/arso/apps/cli/internal/appconfig"
+	"github.com/openarso/arso/apps/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var configOverwrite bool
 
-// configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage ARSO CLI configuration",
@@ -34,7 +33,7 @@ var configInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Create a default ARSO config file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		path, err := appconfig.Init(configOverwrite)
+		path, err := config.Init(configOverwrite)
 		if err != nil {
 			return err
 		}
@@ -48,7 +47,7 @@ var configPathCmd = &cobra.Command{
 	Use:   "path",
 	Short: "Print the ARSO config file path",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		path, err := appconfig.Path()
+		path, err := config.Path()
 		if err != nil {
 			return err
 		}
@@ -62,7 +61,7 @@ var configShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show the current ARSO configuration",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := appconfig.Load()
+		cfg, err := config.Load()
 		if err != nil {
 			return err
 		}
@@ -82,7 +81,7 @@ var configGetCmd = &cobra.Command{
 	Short: "Get a config value",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		value, err := appconfig.Get(args[0])
+		value, err := config.Get(args[0])
 		if err != nil {
 			return err
 		}
@@ -100,7 +99,7 @@ var configSetCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		path, err := appconfig.Set(key, value)
+		path, err := config.Set(key, value)
 		if err != nil {
 			return err
 		}

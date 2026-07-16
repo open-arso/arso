@@ -4,8 +4,13 @@ Copyright © 2026 acortino <arso@acortino.me>
 package cmd
 
 import (
-	"github.com/openarso/arso/apps/cli/internal/clioutput"
-	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"errors"
+	"fmt"
+	"strconv"
+
+	"github.com/openarso/arso/apps/cli/cmd/output"
+	"github.com/openarso/arso/apps/internal/config"
+	"github.com/openarso/arso/apps/internal/satellite"
 	"github.com/spf13/cobra"
 )
 
@@ -36,15 +41,15 @@ var listCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
 
-		normalizedOutput := clioutput.Normalize(outputList)
+		findOutput = output.Normalize(outputList)
 
-		if err := clioutput.Validate(normalizedOutput, clioutput.Text, clioutput.JSON, clioutput.NDJSON); err != nil {
+		if err := output.Validate(findOutput, output.Text, output.JSON, output.NDJSON); err != nil {
 			return err
 		}
 
-		client := newSatelliteClient()
+		client := satellite.NewClient()
 
-		cfg, err := loadConfig()
+		cfg, err := config.Load()
 		if err != nil {
 			return err
 		}
@@ -53,7 +58,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 
-		observer := satellite.Observer{
+		observer := config.Observer{
 			Name:            cfg.Node.Name,
 			LatitudeDeg:     *cfg.Observatory.Latitude,
 			LongitudeDeg:    *cfg.Observatory.Longitude,
@@ -62,10 +67,38 @@ var listCmd = &cobra.Command{
 
 		nextPassPredictions, err := client.PassPredictions(cmd.Context(), target, observer, fromTimeList, lookaheadList, minElevationList)
 		if err != nil {
-			return err
+			var ambiguousErr *satellite.AmbiguousTargetError
+
+			if errors.As(err, &ambiguousErr) {
+				selected, selectErr := SelectResolvedTarget(
+					cmd.InOrStdin(),
+					cmd.ErrOrStderr(),
+					ambiguousErr.Candidates,
+				)
+				if selectErr != nil {
+					return selectErr
+				}
+
+				if cacheErr := client.CacheResolvedTarget(target, selected); cacheErr != nil {
+					fmt.Fprintf(
+						cmd.ErrOrStderr(),
+						"Warning: could not cache selected target: %v\n",
+						cacheErr,
+					)
+				}
+
+				target = strconv.Itoa(selected.NoradID)
+				client.PassPredictions(cmd.Context(), target, observer, fromTimeList, lookaheadList, minElevationList)
+
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 
-		return printPassPredictions(cmd, nextPassPredictions, normalizedOutput)
+		return output.PrintPassPredictions(cmd, nextPassPredictions, outputList)
 	},
 }
 

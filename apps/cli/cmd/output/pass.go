@@ -1,16 +1,15 @@
-package cmd
+package output
 
 import (
 	"fmt"
 
-	"github.com/openarso/arso/apps/cli/internal/clioutput"
-	"github.com/openarso/arso/apps/cli/internal/satellite"
+	"github.com/openarso/arso/apps/internal/satellite"
 	"github.com/spf13/cobra"
 )
 
-func printPassPredictions(cmd *cobra.Command, result satellite.PassPredictionResult, output string) error {
-	switch output {
-	case clioutput.Text:
+func PrintPassPredictions(cmd *cobra.Command, result satellite.PassPredictionResult, outputFormat string) error {
+	switch outputFormat {
+	case Text:
 		printPassPredictionResultText(cmd, result)
 		for i, pass := range result.Passes {
 			if i > 0 {
@@ -21,14 +20,14 @@ func printPassPredictions(cmd *cobra.Command, result satellite.PassPredictionRes
 		}
 		return nil
 
-	case clioutput.JSON:
-		return printJSON(cmd, result)
+	case JSON:
+		return PrintJSON(cmd, result)
 
-	case clioutput.NDJSON:
-		return printNDJSON(cmd, result.Passes)
+	case NDJSON:
+		return PrintNDJSON(cmd, result.Passes)
 
 	default:
-		return fmt.Errorf("unhandled output format %q", output)
+		return fmt.Errorf("unhandled output format %q", outputFormat)
 	}
 }
 

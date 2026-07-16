@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	sgp4 "github.com/akhenakh/sgp4"
+	"github.com/openarso/arso/apps/internal/config"
 )
 
 // DefaultBaseURL is the CelesTrak endpoint used for GP element queries.
@@ -123,7 +124,7 @@ func (c *Client) Fetch(ctx context.Context, queryKey string, queryValue string) 
 func (c *Client) PassPredictions(
 	ctx context.Context,
 	target string,
-	observer Observer,
+	observer config.Observer,
 	at string,
 	lookahead string,
 	minElevation int,
@@ -297,7 +298,7 @@ func splitLookahead(lookahead string) (int, string, error) {
 func (c *Client) NextPass(
 	ctx context.Context,
 	target string,
-	observer Observer,
+	observer config.Observer,
 	at string,
 	lookahead string,
 	minElevation int,
@@ -392,7 +393,7 @@ func formatLookaheadDuration(d time.Duration) (string, error) {
 func (c *Client) Locate(
 	ctx context.Context,
 	target string,
-	observer Observer,
+	observer config.Observer,
 	at time.Time,
 ) ([]ApparentPosition, error) {
 	resolved, err := c.ResolveTarget(ctx, target)
