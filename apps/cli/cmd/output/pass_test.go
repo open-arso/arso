@@ -280,8 +280,8 @@ func TestPrintPassPredictions_EdgeCases(t *testing.T) {
 		losTime := time.Date(2026, 7, 16, 14, 30, 0, 0, time.UTC)
 
 		result := satellite.PassPredictionResult{
-			Name:   "TestSat",
-			Kind:   "satellite",
+			Name: "TestSat",
+			Kind: "satellite",
 			Passes: []satellite.PredictedPass{
 				{
 					AcquisitionOfSignal: aosTime,
@@ -317,8 +317,8 @@ func TestPrintPassPredictions_EdgeCases(t *testing.T) {
 		now := time.Now().UTC()
 
 		result := satellite.PassPredictionResult{
-			Name:   "TestSat",
-			Kind:   "satellite",
+			Name: "TestSat",
+			Kind: "satellite",
 			Passes: []satellite.PredictedPass{
 				{
 					AcquisitionOfSignal: now,
@@ -471,8 +471,8 @@ func TestPrintPassPredictions_TimeFormatting(t *testing.T) {
 	localTime := time.Date(2026, 7, 16, 8, 30, 0, 0, loc)
 
 	result := satellite.PassPredictionResult{
-		Name:   "TestSat",
-		Kind:   "satellite",
+		Name: "TestSat",
+		Kind: "satellite",
 		Passes: []satellite.PredictedPass{
 			{
 				AcquisitionOfSignal: aosTime,

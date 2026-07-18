@@ -12,10 +12,10 @@ import (
 
 func TestPrintJSON(t *testing.T) {
 	tests := []struct {
-		name          string
-		value         any
-		expectedJSON  string
-		expectError   bool
+		name         string
+		value        any
+		expectedJSON string
+		expectError  bool
 	}{
 		{
 			name: "simple struct",
@@ -36,8 +36,8 @@ func TestPrintJSON(t *testing.T) {
 		{
 			name: "map",
 			value: map[string]interface{}{
-				"key":   "value",
-				"count": 42,
+				"key":    "value",
+				"count":  42,
 				"active": true,
 			},
 			expectedJSON: `{
@@ -49,7 +49,7 @@ func TestPrintJSON(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "slice",
+			name:  "slice",
 			value: []string{"apple", "banana", "cherry"},
 			expectedJSON: `[
   "apple",
@@ -101,20 +101,20 @@ func TestPrintJSON(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "nil value",
+			name:  "nil value",
 			value: nil,
 			expectedJSON: `null
 `,
 			expectError: false,
 		},
 		{
-			name: "channel - should fail",
-			value: make(chan int),
+			name:        "channel - should fail",
+			value:       make(chan int),
 			expectError: true,
 		},
 		{
-			name: "complex number - should fail",
-			value: complex(1, 2),
+			name:        "complex number - should fail",
+			value:       complex(1, 2),
 			expectError: true,
 		},
 	}
@@ -168,7 +168,7 @@ func TestPrintNDJSON(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "strings",
+			name:   "strings",
 			values: []string{"apple", "banana", "cherry"},
 			expectedLines: []string{
 				`"apple"`,
@@ -178,7 +178,7 @@ func TestPrintNDJSON(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "integers",
+			name:   "integers",
 			values: []int{1, 2, 3, 4, 5},
 			expectedLines: []string{
 				"1",
@@ -238,22 +238,22 @@ func TestPrintNDJSON(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "empty slice",
-			values: []string{},
+			name:          "empty slice",
+			values:        []string{},
 			expectedLines: []string{},
-			expectError: false,
+			expectError:   false,
 		},
 		{
-			name: "nil slice",
-			values: []string(nil),
+			name:          "nil slice",
+			values:        []string(nil),
 			expectedLines: []string{},
-			expectError: false,
+			expectError:   false,
 		},
 		{
-			name: "single element",
-			values: []int{42},
+			name:          "single element",
+			values:        []int{42},
 			expectedLines: []string{"42"},
-			expectError: false,
+			expectError:   false,
 		},
 		{
 			name: "custom type",
@@ -442,7 +442,7 @@ func TestPrintJSON_Formatting(t *testing.T) {
 			value: struct {
 				Field1 string `json:"field1"`
 				Field2 int    `json:"field2"`
-				Nested  struct {
+				Nested struct {
 					Inner string `json:"inner"`
 				} `json:"nested"`
 			}{

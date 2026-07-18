@@ -13,7 +13,7 @@ import (
 
 func TestPrintNodeStatus(t *testing.T) {
 	startedAt := time.Date(2026, 7, 16, 12, 0, 0, 0, time.UTC)
-	
+
 	status := node.Status{
 		Runtime: node.Runtime{
 			GoRoutines: 42,
@@ -275,7 +275,7 @@ CPU:          99.99
 
 func TestPrintNodeStatus_JSONValidation(t *testing.T) {
 	startedAt := time.Date(2026, 7, 16, 12, 0, 0, 0, time.UTC)
-	
+
 	status := node.Status{
 		Runtime: node.Runtime{
 			GoRoutines: 42,
@@ -317,7 +317,7 @@ func TestPrintNodeStatus_JSONValidation(t *testing.T) {
 
 func TestPrintNodeStatus_NDJSONValidation(t *testing.T) {
 	startedAt := time.Date(2026, 7, 16, 12, 0, 0, 0, time.UTC)
-	
+
 	status := node.Status{
 		Runtime: node.Runtime{
 			GoRoutines: 42,
@@ -482,7 +482,7 @@ func TestPrintNodeStatus_EdgeCases(t *testing.T) {
 
 func TestPrintNodeStatus_FormattingConsistency(t *testing.T) {
 	startedAt := time.Date(2026, 7, 16, 12, 0, 0, 0, time.UTC)
-	
+
 	status := node.Status{
 		Runtime: node.Runtime{
 			GoRoutines: 42,

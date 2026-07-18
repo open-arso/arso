@@ -15,19 +15,27 @@ import (
 	"github.com/openarso/arso/apps/internal/config"
 )
 
-// DefaultBaseURL is the CelesTrak endpoint used for GP element queries.
 const DefaultBaseURL = "https://celestrak.org/NORAD/elements/gp.php"
 
-// Client fetches orbital elements and computes apparent positions and passes
-// from CelesTrak data.
+type rawFetcher func(
+	ctx context.Context,
+	queryKey string,
+	queryValue string,
+) ([]byte, error)
+
+type targetResolver func(
+	ctx context.Context,
+	target string,
+) (ResolvedTarget, error)
+
 type Client struct {
-	baseURL     string
-	httpClient  *http.Client
-	targetCache *TargetCache
+	baseURL       string
+	httpClient    *http.Client
+	targetCache   *TargetCache
+	fetchRaw      rawFetcher
+	resolveTarget targetResolver
 }
 
-// NewClient returns a CelesTrak client with a default HTTP timeout and target
-// cache. Cache initialization failures fall back to an in-memory cache.
 func NewClient() *Client {
 	targetCache, err := LoadDefaultTargetCache()
 	if err != nil {
@@ -36,13 +44,18 @@ func NewClient() *Client {
 		targetCache = NewTargetCache("")
 	}
 
-	return &Client{
+	client := &Client{
 		baseURL: DefaultBaseURL,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		targetCache: targetCache,
 	}
+
+	client.fetchRaw = client.fetchRawHTTP
+	client.resolveTarget = client.ResolveTarget
+
+	return client
 }
 
 func (c *Client) buildURL(queryKey string, queryValue string) (string, error) {
@@ -60,7 +73,7 @@ func (c *Client) buildURL(queryKey string, queryValue string) (string, error) {
 	return baseURL.String(), nil
 }
 
-func (c *Client) fetchRaw(ctx context.Context, queryKey string, queryValue string) ([]byte, error) {
+func (c *Client) fetchRawHTTP(ctx context.Context, queryKey string, queryValue string) ([]byte, error) {
 	apiURL, err := c.buildURL(queryKey, queryValue)
 	if err != nil {
 		return nil, fmt.Errorf("build CelesTrak URL: %w", err)
@@ -89,7 +102,6 @@ func (c *Client) fetchRaw(ctx context.Context, queryKey string, queryValue strin
 	return body, nil
 }
 
-// Elements returns raw GP element records for target from CelesTrak.
 func (c *Client) Elements(ctx context.Context, target string) ([]GPElement, error) {
 	queryKey, queryValue, err := BuildCelesTrakQuery(target)
 	if err != nil {
@@ -104,7 +116,6 @@ func (c *Client) Elements(ctx context.Context, target string) ([]GPElement, erro
 	return elements, nil
 }
 
-// Fetch executes a CelesTrak query and decodes the GP element response.
 func (c *Client) Fetch(ctx context.Context, queryKey string, queryValue string) ([]GPElement, error) {
 	body, err := c.fetchRaw(ctx, queryKey, queryValue)
 	if err != nil {
@@ -119,8 +130,6 @@ func (c *Client) Fetch(ctx context.Context, queryKey string, queryValue string) 
 	return elements, nil
 }
 
-// PassPredictions returns all passes for target that meet the elevation filter
-// within the requested lookahead window.
 func (c *Client) PassPredictions(
 	ctx context.Context,
 	target string,
@@ -129,7 +138,17 @@ func (c *Client) PassPredictions(
 	lookahead string,
 	minElevation int,
 ) (PassPredictionResult, error) {
-	resolved, err := c.ResolveTarget(ctx, target)
+	startTime, err := parseTimeStr(at)
+	if err != nil {
+		return PassPredictionResult{}, err
+	}
+
+	stopTime, err := computeLookaheadTime(startTime, lookahead)
+	if err != nil {
+		return PassPredictionResult{}, fmt.Errorf("compute stop time based on lookahead: %w", err)
+	}
+
+	resolved, err := c.resolveTarget(ctx, target)
 	if err != nil {
 		return PassPredictionResult{}, err
 	}
@@ -153,16 +172,6 @@ func (c *Client) PassPredictions(
 	tle, err := omm.ToTLE()
 	if err != nil {
 		return PassPredictionResult{}, fmt.Errorf("convert OMM to TLE for %s: %w", omm.ObjectName, err)
-	}
-
-	startTime, err := parseTimeStr(at)
-	if err != nil {
-		return PassPredictionResult{}, err
-	}
-
-	stopTime, err := computeLookaheadTime(startTime, lookahead)
-	if err != nil {
-		return PassPredictionResult{}, fmt.Errorf("compute stop time based on lookahead: %w", err)
 	}
 
 	const stepSeconds = 30
@@ -208,8 +217,6 @@ func (c *Client) PassPredictions(
 	}, nil
 }
 
-// parseTimeStr accepts the RFC3339 timestamps used by CLI flags and defaults to
-// the current UTC time when the caller leaves the flag empty.
 func parseTimeStr(value string) (time.Time, error) {
 	if value == "" {
 		return time.Now().UTC(), nil
@@ -226,8 +233,6 @@ func parseTimeStr(value string) (time.Time, error) {
 	return t.UTC(), nil
 }
 
-// computeLookaheadTime expands the CLI lookahead syntax into an absolute end
-// time.
 func computeLookaheadTime(start time.Time, lookahead string) (time.Time, error) {
 	timeValue, unitString, err := splitLookahead(lookahead)
 	if err != nil {
@@ -252,8 +257,6 @@ func computeLookaheadTime(start time.Time, lookahead string) (time.Time, error) 
 	}
 }
 
-// splitLookahead separates a lookahead string like 48h into its numeric value
-// and unit suffix.
 func splitLookahead(lookahead string) (int, string, error) {
 	if lookahead == "" {
 		return 0, "", fmt.Errorf("lookahead cannot be empty")
@@ -289,12 +292,22 @@ func splitLookahead(lookahead string) (int, string, error) {
 		return 0, "", fmt.Errorf("lookahead value must be positive: %d", value)
 	}
 
+	// Validate unit
+	validUnits := map[string]bool{
+		"Y": true,
+		"M": true,
+		"d": true,
+		"h": true,
+		"m": true,
+		"s": true,
+	}
+	if !validUnits[unitPart] {
+		return 0, "", fmt.Errorf("invalid lookahead unit %q, must be one of: Y, M, d, h, m, s", unitPart)
+	}
+
 	return value, unitPart, nil
 }
 
-// NextPass returns only the first pass that meets the requested constraints.
-// It searches progressively larger windows until it finds a pass or reaches the
-// caller's maximum lookahead.
 func (c *Client) NextPass(
 	ctx context.Context,
 	target string,
@@ -362,8 +375,6 @@ func (c *Client) NextPass(
 	)
 }
 
-// formatLookaheadDuration converts a duration into the compact CLI syntax
-// accepted by pass lookahead flags.
 func formatLookaheadDuration(d time.Duration) (string, error) {
 	if d <= 0 {
 		return "", fmt.Errorf("lookahead duration must be positive")
@@ -388,15 +399,13 @@ func formatLookaheadDuration(d time.Duration) (string, error) {
 	return "", fmt.Errorf("unsupported lookahead duration precision: %s", d)
 }
 
-// Locate computes the apparent position of a target for an observer at a fixed
-// moment in time.
 func (c *Client) Locate(
 	ctx context.Context,
 	target string,
 	observer config.Observer,
 	at time.Time,
 ) ([]ApparentPosition, error) {
-	resolved, err := c.ResolveTarget(ctx, target)
+	resolved, err := c.resolveTarget(ctx, target)
 	if err != nil {
 		return nil, err
 	}
@@ -479,8 +488,6 @@ func (c *Client) Locate(
 	return results, nil
 }
 
-// CacheResolvedTarget stores a resolved target under the user's original query
-// so later lookups can skip an ambiguous-name prompt.
 func (c *Client) CacheResolvedTarget(query string, resolved ResolvedTarget) error {
 	normalized := normalizeTarget(query)
 
