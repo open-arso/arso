@@ -1,4 +1,4 @@
-package endpoint
+package config
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,9 +6,11 @@ import (
 	"net/http"
 )
 
-func ConfigHandler() gin.HandlerFunc {
+type Loader func() (config.Config, error)
+
+func ConfigHandler(load Loader) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cfg, err := config.Load()
+		cfg, err := load()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "failed to load configuration",

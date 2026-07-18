@@ -1,4 +1,4 @@
-package endpoint
+package status
 
 import (
 	"github.com/gin-gonic/gin"

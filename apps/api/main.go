@@ -1,24 +1,13 @@
 package main
 
 import (
-	"time"
-
-	"github.com/alexliesenfeld/health"
-	"github.com/gin-gonic/gin"
-	"github.com/openarso/arso/apps/api/endpoint"
+	"fmt"
 )
 
 func main() {
-	r := gin.Default()
+	r := setupRouter()
 
-	checker := health.NewChecker(
-		health.WithCacheDuration(time.Second),
-		health.WithTimeout(10*time.Second),
-	)
-
-	r.GET("/health", endpoint.HealthHandler(checker))
-	r.GET("/status", endpoint.StatusHandler())
-	r.GET("/config", endpoint.ConfigHandler())
-
-	r.Run()
+	if err := r.Run(); err != nil {
+	    fmt.Printf("Error running API: %v\n",err.Error())
+	}
 }
